@@ -70,7 +70,7 @@ function OrdersPage() {
         <TableShell>
           <thead>
             <tr>
-              <Th></Th>
+              <Th><span className="sr-only">Expand</span></Th>
               <Th>Order</Th>
               <Th>Customer</Th>
               <Th>Items</Th>
