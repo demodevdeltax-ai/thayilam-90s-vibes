@@ -194,7 +194,14 @@ function ShopPage() {
               <>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
                   {visible.map((p) => (
-                    <ProductCard key={p.id} p={p} />
+                    <Link
+                      key={p.id}
+                      to="/shop/$productId"
+                      params={{ productId: p.id }}
+                      className="block"
+                    >
+                      <ProductCard p={p} />
+                    </Link>
                   ))}
                 </div>
 
