@@ -19,6 +19,8 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { LeafIcon, FlowerIcon } from "@/components/icons";
 import { PRODUCTS, rupee, type Product } from "@/lib/products";
+import { useCart } from "@/lib/cart";
+import { useNavigate } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/shop/$productId")({
   component: ProductDetailPage,
@@ -111,6 +113,8 @@ function ProductDetailPage() {
   );
   const [qty, setQty] = useState(1);
   const [wished, setWished] = useState(false);
+  const cart = useCart();
+  const navigate = useNavigate();
 
   // Build a small gallery from this and a few sibling images
   const gallery = useMemo(() => {
@@ -420,10 +424,22 @@ function ProductDetailPage() {
                   </button>
                 </div>
 
-                <Button size="lg" className="flex-1 min-w-[140px]">
+                <Button
+                  size="lg"
+                  className="flex-1 min-w-[140px]"
+                  onClick={() => cart.add(product.id, weight as Weight, qty, unitPrice)}
+                >
                   Add to Cart · {rupee(total)}
                 </Button>
-                <Button size="lg" variant="outline" className="flex-1 min-w-[120px]">
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="flex-1 min-w-[120px]"
+                  onClick={() => {
+                    cart.add(product.id, weight as Weight, qty, unitPrice);
+                    navigate({ to: "/checkout" });
+                  }}
+                >
                   Buy Now
                 </Button>
 
