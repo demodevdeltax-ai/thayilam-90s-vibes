@@ -136,54 +136,111 @@ export const PAYOUTS: Payout[] = [
 // ----- Categories (admin-managed taxonomy) -----
 export type AdminCategory = {
   id: string;
-  name: string;
+  name: string;          // English
+  telugu: string;        // Telugu name
   slug: string;
+  icon: string;          // emoji or single-stroke glyph standing in for an SVG upload
+  parentId: string | null;
   productCount: number;
   active: boolean;
+  sortOrder: number;
 };
 export const ADMIN_CATEGORIES: AdminCategory[] = [
-  { id: "cat-1", name: "Murukku", slug: "murukku", productCount: PRODUCTS.filter(p => p.category === "Murukku").length, active: true },
-  { id: "cat-2", name: "Ladoo", slug: "ladoo", productCount: PRODUCTS.filter(p => p.category === "Ladoo").length, active: true },
-  { id: "cat-3", name: "Chakli", slug: "chakli", productCount: PRODUCTS.filter(p => p.category === "Chakli").length, active: true },
-  { id: "cat-4", name: "Mixture", slug: "mixture", productCount: PRODUCTS.filter(p => p.category === "Mixture").length, active: true },
-  { id: "cat-5", name: "Pickle", slug: "pickle", productCount: PRODUCTS.filter(p => p.category === "Pickle").length, active: true },
-  { id: "cat-6", name: "Pappad", slug: "pappad", productCount: PRODUCTS.filter(p => p.category === "Pappad").length, active: true },
-  { id: "cat-7", name: "Sweets", slug: "sweets", productCount: PRODUCTS.filter(p => p.category === "Sweets").length, active: true },
+  { id: "cat-1", name: "Murukku",  telugu: "మురుకులు",   slug: "murukku", icon: "🥨", parentId: null, productCount: PRODUCTS.filter(p => p.category === "Murukku").length, active: true,  sortOrder: 1 },
+  { id: "cat-2", name: "Ladoo",    telugu: "లడ్డూ",       slug: "ladoo",   icon: "🟡", parentId: null, productCount: PRODUCTS.filter(p => p.category === "Ladoo").length,   active: true,  sortOrder: 2 },
+  { id: "cat-3", name: "Chakli",   telugu: "చక్లి",       slug: "chakli",  icon: "➰", parentId: null, productCount: PRODUCTS.filter(p => p.category === "Chakli").length,  active: true,  sortOrder: 3 },
+  { id: "cat-4", name: "Mixture",  telugu: "మిక్చర్",     slug: "mixture", icon: "🌶️", parentId: null, productCount: PRODUCTS.filter(p => p.category === "Mixture").length, active: true,  sortOrder: 4 },
+  { id: "cat-5", name: "Pickle",   telugu: "ఊరగాయ",     slug: "pickle",  icon: "🫙", parentId: null, productCount: PRODUCTS.filter(p => p.category === "Pickle").length,  active: true,  sortOrder: 5 },
+  { id: "cat-6", name: "Pappad",   telugu: "అప్పడం",     slug: "pappad",  icon: "⭕", parentId: null, productCount: PRODUCTS.filter(p => p.category === "Pappad").length,  active: true,  sortOrder: 6 },
+  { id: "cat-7", name: "Sweets",   telugu: "మిఠాయిలు",   slug: "sweets",  icon: "🍬", parentId: null, productCount: PRODUCTS.filter(p => p.category === "Sweets").length,  active: true,  sortOrder: 7 },
+  { id: "cat-8", name: "Mysore Pak", telugu: "మైసూర్ పాక్", slug: "mysore-pak", icon: "🟫", parentId: "cat-7", productCount: 0, active: true, sortOrder: 8 },
+  { id: "cat-9", name: "Jalebi",   telugu: "జిలేబి",     slug: "jalebi",  icon: "🌀", parentId: "cat-7", productCount: 0, active: true, sortOrder: 9 },
 ];
 
-// ----- Banners & Offers -----
+// ----- Homepage Banners -----
 export type Banner = {
   id: string;
   title: string;
   subtitle: string;
   cta: string;
+  imageUrl: string;     // background image
+  linkUrl: string;      // where the banner links to
   placement: "Homepage Hero" | "Category Strip" | "Cart Page";
   active: boolean;
   startsAt: string;
   endsAt: string;
+  sortOrder: number;
 };
 export const BANNERS: Banner[] = [
-  { id: "b1", title: "Diwali Dabba", subtitle: "Pre-order family packs from 25 vendors", cta: "Shop Diwali", placement: "Homepage Hero", active: true, startsAt: "2025-04-15", endsAt: "2025-05-15" },
-  { id: "b2", title: "Murukku Mela", subtitle: "Flat 15% off all murukku this week", cta: "Shop Murukku", placement: "Category Strip", active: true, startsAt: "2025-04-20", endsAt: "2025-04-27" },
-  { id: "b3", title: "Free shipping over ₹999", subtitle: "Across India, no code required", cta: "Browse all", placement: "Cart Page", active: true, startsAt: "2025-01-01", endsAt: "2025-12-31" },
-  { id: "b4", title: "Andhra Pickle Festival", subtitle: "Hand-pounded by 6 grandmothers", cta: "Try a jar", placement: "Homepage Hero", active: false, startsAt: "2025-03-01", endsAt: "2025-03-15" },
+  { id: "b1", title: "Diwali Dabba", subtitle: "Pre-order family packs from 25 vendors", cta: "Shop Diwali", imageUrl: "https://images.unsplash.com/photo-1601050690597-df0568f70950?w=1600&q=70", linkUrl: "/shop?occasion=diwali", placement: "Homepage Hero",  active: true,  startsAt: "2025-04-15", endsAt: "2025-05-15", sortOrder: 1 },
+  { id: "b2", title: "Murukku Mela", subtitle: "Flat 15% off all murukku this week",   cta: "Shop Murukku", imageUrl: "https://images.unsplash.com/photo-1604152135912-04a022e23696?w=1600&q=70", linkUrl: "/shop?cat=murukku",   placement: "Category Strip", active: true,  startsAt: "2025-04-20", endsAt: "2025-04-27", sortOrder: 2 },
+  { id: "b3", title: "Free shipping over ₹999", subtitle: "Across India, no code required", cta: "Browse all", imageUrl: "https://images.unsplash.com/photo-1606787366850-de6330128bfc?w=1600&q=70", linkUrl: "/shop", placement: "Cart Page", active: true, startsAt: "2025-01-01", endsAt: "2025-12-31", sortOrder: 3 },
+  { id: "b4", title: "Andhra Pickle Festival", subtitle: "Hand-pounded by 6 grandmothers", cta: "Try a jar", imageUrl: "https://images.unsplash.com/photo-1599909533327-a7afa46493c7?w=1600&q=70", linkUrl: "/shop?cat=pickle", placement: "Homepage Hero", active: false, startsAt: "2025-03-01", endsAt: "2025-03-15", sortOrder: 4 },
 ];
 
+// ----- Coupons / Offers -----
+export type CouponType = "flat" | "percent";
+export type CouponScope = "all" | "vendors" | "categories";
 export type Offer = {
   id: string;
   code: string;
   description: string;
-  discount: string;
+  type: CouponType;
+  value: number;          // INR for flat, % for percent
   minOrder: number;
+  maxDiscount: number;    // cap for percent coupons; 0 = no cap
+  startsAt: string;
+  endsAt: string;
   used: number;
-  cap: number;
+  cap: number;            // total usage limit
+  scope: CouponScope;
+  scopeTargets: string[]; // vendor names or category slugs
   active: boolean;
 };
 export const OFFERS: Offer[] = [
-  { id: "o1", code: "PAATI10", description: "10% off your first order", discount: "10%", minOrder: 299, used: 412, cap: 1000, active: true },
-  { id: "o2", code: "THAYI50", description: "Flat ₹50 off above ₹599", discount: "₹50", minOrder: 599, used: 188, cap: 500, active: true },
-  { id: "o3", code: "FREESHIP", description: "Free shipping, any order", discount: "Shipping", minOrder: 0, used: 940, cap: 2000, active: true },
-  { id: "o4", code: "DIWALI25", description: "25% off Diwali family packs", discount: "25%", minOrder: 1499, used: 22, cap: 300, active: false },
+  { id: "o1", code: "PAATI10",  description: "10% off your first order",        type: "percent", value: 10, minOrder: 299,  maxDiscount: 200, startsAt: "2025-01-01", endsAt: "2025-12-31", used: 412, cap: 1000, scope: "all",        scopeTargets: [], active: true },
+  { id: "o2", code: "THAYI50",  description: "Flat ₹50 off above ₹599",         type: "flat",    value: 50, minOrder: 599,  maxDiscount: 0,   startsAt: "2025-03-01", endsAt: "2025-06-30", used: 188, cap: 500,  scope: "all",        scopeTargets: [], active: true },
+  { id: "o3", code: "FREESHIP", description: "Free shipping, any order",        type: "flat",    value: 60, minOrder: 0,    maxDiscount: 0,   startsAt: "2025-01-01", endsAt: "2025-12-31", used: 940, cap: 2000, scope: "all",        scopeTargets: [], active: true },
+  { id: "o4", code: "DIWALI25", description: "25% off Diwali family packs",     type: "percent", value: 25, minOrder: 1499, maxDiscount: 500, startsAt: "2025-10-15", endsAt: "2025-11-15", used: 22,  cap: 300,  scope: "categories", scopeTargets: ["sweets","mixture"], active: false },
+  { id: "o5", code: "PAATI100", description: "₹100 off Paati's Pantry orders",   type: "flat",    value: 100, minOrder: 799, maxDiscount: 0,   startsAt: "2025-04-01", endsAt: "2025-05-31", used: 64,  cap: 250,  scope: "vendors",    scopeTargets: ["Paati's Pantry"], active: true },
+];
+
+// ----- Notifications -----
+export type NotifChannel = "push" | "sms" | "email";
+export type NotifAudience =
+  | { kind: "all" }
+  | { kind: "city"; city: string }
+  | { kind: "lapsed"; days: number }
+  | { kind: "individual"; customerId: string };
+export type SentNotification = {
+  id: string;
+  channel: NotifChannel;
+  title: string;
+  body: string;
+  audience: NotifAudience;
+  recipients: number;
+  sentAt: string;
+};
+export type NotifTemplate = {
+  id: string;
+  name: string;
+  category: "Order" | "Product" | "Festival" | "General";
+  channel: NotifChannel;
+  title: string;
+  body: string;
+};
+export const NOTIF_TEMPLATES: NotifTemplate[] = [
+  { id: "t1", name: "Order shipped",       category: "Order",    channel: "sms",   title: "Your dabba is on the way!", body: "Hi {name}, your order {orderId} has shipped via {courier}. Track: {link}" },
+  { id: "t2", name: "Order delivered",     category: "Order",    channel: "push",  title: "Snacks delivered ✦",        body: "Your order {orderId} has been delivered. Enjoy, and please leave a review!" },
+  { id: "t3", name: "New product alert",   category: "Product",  channel: "push",  title: "Fresh from {vendor}",        body: "Just in: {productName}. Tap to grab a pack before it's gone." },
+  { id: "t4", name: "Diwali offer",        category: "Festival", channel: "email", title: "Diwali Dabba is here 🪔",   body: "Hand-packed family hampers from 25 grandmothers. Use code DIWALI25 for 25% off." },
+  { id: "t5", name: "Pongal special",      category: "Festival", channel: "sms",   title: "Pongal pack — limited",     body: "Sakkarai Pongal mix + ven pongal masala from Lakshmi Akka. Order by Jan 13." },
+  { id: "t6", name: "We miss you",         category: "General",  channel: "email", title: "Paati misses you",          body: "It's been a while, {name}. Here's ₹50 off your next dabba — code COMEBACK50." },
+];
+export const SENT_NOTIFICATIONS: SentNotification[] = [
+  { id: "n1", channel: "push", title: "Diwali Dabba is here 🪔", body: "Family hampers from 25 grandmothers. Tap to shop.", audience: { kind: "all" }, recipients: 8420, sentAt: "2025-04-22T10:15:00Z" },
+  { id: "n2", channel: "sms",  title: "Free shipping today",     body: "Order over ₹599 — free shipping, today only.",     audience: { kind: "city", city: "Chennai" }, recipients: 1840, sentAt: "2025-04-21T08:00:00Z" },
+  { id: "n3", channel: "email",title: "Paati misses you",        body: "₹50 off your next dabba — code COMEBACK50.",        audience: { kind: "lapsed", days: 60 }, recipients: 612, sentAt: "2025-04-19T17:30:00Z" },
 ];
 
 // ----- Failed payments / alerts -----
