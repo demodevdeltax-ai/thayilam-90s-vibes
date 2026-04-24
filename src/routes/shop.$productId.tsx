@@ -18,7 +18,7 @@ import { ProductCard } from "@/components/product-card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { LeafIcon, FlowerIcon } from "@/components/icons";
-import { PRODUCTS, rupee, type Product } from "@/lib/products";
+import { PRODUCTS, rupee, type Product, type Weight } from "@/lib/products";
 import { useCart } from "@/lib/cart";
 import { useNavigate } from "@tanstack/react-router";
 
