@@ -5,6 +5,7 @@ import toranImg from "@/assets/border-toran.png";
 export function Visit() {
   return (
     <section id="visit" className="relative py-20 md:py-28 paper-sand border-y border-brown/30">
+      <span id="contact" className="block -mt-24 pt-24" aria-hidden />
       <img
         src={toranImg}
         alt=""

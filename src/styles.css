@@ -157,6 +157,8 @@
 
   html {
     font-family: var(--font-body);
+    scroll-behavior: smooth;
+    scroll-padding-top: 5rem;
   }
 
   body {
@@ -214,6 +216,9 @@
 
   .stamp-rotate-l { transform: rotate(-2deg); }
   .stamp-rotate-r { transform: rotate(2deg); }
+
+  .scrollbar-none::-webkit-scrollbar { display: none; }
+  .scrollbar-none { scrollbar-width: none; -ms-overflow-style: none; }
 
   .line-art {
     /* Make black ink illustrations adopt the brown ink color via filter */
