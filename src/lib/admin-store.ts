@@ -125,7 +125,8 @@ export function reorderCategories(orderedIds: string[]) {
   ADMIN_CATEGORIES.sort((a, b) => a.sortOrder - b.sortOrder);
   emit();
 }
-export function upsertCategory(input: Omit<AdminCategory, "productCount" | "sortOrder"> & { id?: string }) {
+type CategoryInput = Omit<AdminCategory, "id" | "productCount" | "sortOrder"> & { id?: string };
+export function upsertCategory(input: CategoryInput) {
   if (input.id) {
     const c = ADMIN_CATEGORIES.find((x) => x.id === input.id);
     if (!c) return;
