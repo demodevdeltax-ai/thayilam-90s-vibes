@@ -2,9 +2,11 @@ import { Heart, Plus } from "lucide-react";
 import { useState } from "react";
 import type { Product } from "@/lib/products";
 import { rupee } from "@/lib/products";
+import { useCart } from "@/lib/cart";
 
 export function ProductCard({ p }: { p: Product }) {
   const [wish, setWish] = useState(false);
+  const cart = useCart();
   const discount = p.mrp ? Math.round(((p.mrp - p.price) / p.mrp) * 100) : 0;
 
   return (
@@ -70,6 +72,11 @@ export function ProductCard({ p }: { p: Product }) {
         </div>
         <button
           aria-label={`Add ${p.name} to cart`}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            cart.add(p.id);
+          }}
           className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-rust text-cream text-[11px] font-semibold uppercase tracking-wider px-3 py-2 hover:bg-rust/90 transition-colors"
         >
           <Plus size={14} strokeWidth={2.2} />

@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Search, ShoppingBag, Menu } from "lucide-react";
 import { useState } from "react";
+import { useCart } from "@/lib/cart";
 
 const NAV = [
   { label: "Home", href: "/" },
@@ -11,6 +12,7 @@ const NAV = [
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
+  const { count } = useCart();
 
   return (
     <header className="sticky top-0 z-40 paper border-b border-brown/20 backdrop-blur-[1px]">
@@ -37,12 +39,18 @@ export function SiteHeader() {
           <button aria-label="Search" className="h-10 w-10 rounded-full hover:bg-brown/10 text-brown grid place-items-center transition-colors">
             <Search size={18} strokeWidth={1.6} />
           </button>
-          <button aria-label="Cart" className="relative h-10 w-10 rounded-full hover:bg-brown/10 text-brown grid place-items-center transition-colors">
+          <Link
+            to="/cart"
+            aria-label="Cart"
+            className="relative h-10 w-10 rounded-full hover:bg-brown/10 text-brown grid place-items-center transition-colors"
+          >
             <ShoppingBag size={18} strokeWidth={1.6} />
-            <span className="absolute -top-0.5 -right-0.5 text-[10px] bg-rust text-cream rounded-full h-4 min-w-4 px-1 grid place-items-center font-semibold">
-              0
-            </span>
-          </button>
+            {count > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 text-[10px] bg-rust text-cream rounded-full h-4 min-w-4 px-1 grid place-items-center font-semibold">
+                {count}
+              </span>
+            )}
+          </Link>
           <button
             aria-label="Menu"
             className="md:hidden h-10 w-10 rounded-full hover:bg-brown/10 text-brown grid place-items-center"
