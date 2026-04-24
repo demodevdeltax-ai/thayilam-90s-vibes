@@ -15,6 +15,8 @@ import {
   X,
   Bell,
   ShieldCheck,
+  Ticket,
+  Send,
 } from "lucide-react";
 import { pendingApprovalsCount } from "@/lib/admin-data";
 
@@ -27,7 +29,9 @@ const NAV: NavItem[] = [
   { to: "/admin/customers", label: "Customers", Icon: Users },
   { to: "/admin/payouts", label: "Payouts", Icon: Wallet },
   { to: "/admin/categories", label: "Categories", Icon: Tag },
-  { to: "/admin/banners", label: "Banners & Offers", Icon: Megaphone },
+  { to: "/admin/banners", label: "Homepage banners", Icon: Megaphone },
+  { to: "/admin/coupons", label: "Coupons & offers", Icon: Ticket },
+  { to: "/admin/notifications", label: "Notifications", Icon: Send },
   { to: "/admin/reports", label: "Reports", Icon: BarChart3 },
   { to: "/admin/settings", label: "Settings", Icon: Settings },
 ];

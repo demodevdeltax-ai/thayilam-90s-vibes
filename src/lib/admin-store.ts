@@ -9,6 +9,7 @@ import {
   BANNERS,
   OFFERS,
   ADMIN_CATEGORIES,
+  SENT_NOTIFICATIONS,
   type VendorStatus,
   type AdminVendor,
   type Payout,
@@ -16,6 +17,9 @@ import {
   type Banner,
   type Offer,
   type AdminCategory,
+  type SentNotification,
+  type NotifAudience,
+  type NotifChannel,
 } from "./admin-data";
 
 type Listener = () => void;
@@ -113,6 +117,106 @@ export function toggleCategory(id: string) {
   c.active = !c.active;
   emit();
 }
+export function reorderCategories(orderedIds: string[]) {
+  orderedIds.forEach((id, idx) => {
+    const c = ADMIN_CATEGORIES.find((x) => x.id === id);
+    if (c) c.sortOrder = idx + 1;
+  });
+  ADMIN_CATEGORIES.sort((a, b) => a.sortOrder - b.sortOrder);
+  emit();
+}
+type CategoryInput = Omit<AdminCategory, "id" | "productCount" | "sortOrder"> & { id?: string };
+export function upsertCategory(input: CategoryInput) {
+  if (input.id) {
+    const c = ADMIN_CATEGORIES.find((x) => x.id === input.id);
+    if (!c) return;
+    Object.assign(c, input);
+  } else {
+    const id = `cat-${Date.now()}`;
+    ADMIN_CATEGORIES.push({
+      ...input,
+      id,
+      productCount: 0,
+      sortOrder: ADMIN_CATEGORIES.length + 1,
+    });
+  }
+  emit();
+}
+export function deleteCategory(id: string) {
+  const idx = ADMIN_CATEGORIES.findIndex((x) => x.id === id);
+  if (idx < 0) return;
+  // Re-parent children to root
+  ADMIN_CATEGORIES.forEach((c) => { if (c.parentId === id) c.parentId = null; });
+  ADMIN_CATEGORIES.splice(idx, 1);
+  emit();
+}
 export function useAdminCategories(): AdminCategory[] {
   return useSyncExternalStore(subscribe, () => ADMIN_CATEGORIES, () => ADMIN_CATEGORIES);
+}
+
+// ---------- Banner mutations ----------
+type BannerInput = Omit<Banner, "id" | "sortOrder"> & { id?: string; sortOrder?: number };
+export function upsertBanner(input: BannerInput) {
+  if (input.id) {
+    const b = BANNERS.find((x) => x.id === input.id);
+    if (!b) return;
+    Object.assign(b, input);
+  } else {
+    BANNERS.push({
+      ...input,
+      id: `b-${Date.now()}`,
+      sortOrder: input.sortOrder ?? BANNERS.length + 1,
+    } as Banner);
+  }
+  emit();
+}
+export function deleteBanner(id: string) {
+  const idx = BANNERS.findIndex((x) => x.id === id);
+  if (idx >= 0) {
+    BANNERS.splice(idx, 1);
+    emit();
+  }
+}
+
+// ---------- Coupon mutations ----------
+type OfferInput = Omit<Offer, "id" | "used"> & { id?: string; used?: number };
+export function upsertOffer(input: OfferInput) {
+  if (input.id) {
+    const o = OFFERS.find((x) => x.id === input.id);
+    if (!o) return;
+    Object.assign(o, input);
+  } else {
+    OFFERS.push({
+      ...input,
+      id: `o-${Date.now()}`,
+      used: input.used ?? 0,
+    } as Offer);
+  }
+  emit();
+}
+export function deleteOffer(id: string) {
+  const idx = OFFERS.findIndex((x) => x.id === id);
+  if (idx >= 0) {
+    OFFERS.splice(idx, 1);
+    emit();
+  }
+}
+
+// ---------- Notifications ----------
+export function sendNotification(input: {
+  channel: NotifChannel;
+  title: string;
+  body: string;
+  audience: NotifAudience;
+  recipients: number;
+}) {
+  SENT_NOTIFICATIONS.unshift({
+    id: `n-${Date.now()}`,
+    sentAt: new Date().toISOString(),
+    ...input,
+  });
+  emit();
+}
+export function useSentNotifications(): SentNotification[] {
+  return useSyncExternalStore(subscribe, () => SENT_NOTIFICATIONS, () => SENT_NOTIFICATIONS);
 }
