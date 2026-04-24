@@ -157,6 +157,8 @@
 
   html {
     font-family: var(--font-body);
+    scroll-behavior: smooth;
+    scroll-padding-top: 5rem;
   }
 
   body {
