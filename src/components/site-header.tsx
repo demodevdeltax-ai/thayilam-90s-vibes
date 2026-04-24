@@ -4,9 +4,9 @@ import { useState } from "react";
 
 const NAV = [
   { label: "Home", href: "/" },
-  { label: "Shop", href: "#shop" },
-  { label: "About", href: "#about" },
-  { label: "Contact", href: "#contact" },
+  { label: "Shop", href: "/shop" },
+  { label: "About", href: "/#about" },
+  { label: "Contact", href: "/#contact" },
 ];
 
 export function SiteHeader() {
