@@ -15,7 +15,8 @@ import {
 } from "lucide-react";
 import { ACTIVE_VENDOR } from "@/lib/vendor-data";
 
-const NAV = [
+type NavItem = { to: string; label: string; Icon: typeof LayoutDashboard; exact?: boolean };
+const NAV: NavItem[] = [
   { to: "/vendor", label: "Dashboard", Icon: LayoutDashboard, exact: true },
   { to: "/vendor/products", label: "My Products", Icon: Package },
   { to: "/vendor/orders", label: "Orders", Icon: ShoppingCart },
@@ -23,7 +24,7 @@ const NAV = [
   { to: "/vendor/reviews", label: "Reviews", Icon: Star },
   { to: "/vendor/settings", label: "Store Settings", Icon: Settings },
   { to: "/vendor/help", label: "Help", Icon: HelpCircle },
-] as const;
+];
 
 export function VendorShell() {
   const [open, setOpen] = useState(false);
@@ -127,7 +128,7 @@ function SidebarInner({
             return (
               <li key={to}>
                 <Link
-                  to={to}
+                  to={to as "/vendor"}
                   onClick={onNavigate}
                   className={`group flex items-center gap-3 h-10 px-3 rounded-lg text-sm transition-colors ${
                     active
