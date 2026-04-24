@@ -154,7 +154,8 @@ export function useAdminCategories(): AdminCategory[] {
 }
 
 // ---------- Banner mutations ----------
-export function upsertBanner(input: Omit<Banner, "sortOrder"> & { id?: string; sortOrder?: number }) {
+type BannerInput = Omit<Banner, "id" | "sortOrder"> & { id?: string; sortOrder?: number };
+export function upsertBanner(input: BannerInput) {
   if (input.id) {
     const b = BANNERS.find((x) => x.id === input.id);
     if (!b) return;
@@ -177,7 +178,8 @@ export function deleteBanner(id: string) {
 }
 
 // ---------- Coupon mutations ----------
-export function upsertOffer(input: Omit<Offer, "used"> & { id?: string; used?: number }) {
+type OfferInput = Omit<Offer, "id" | "used"> & { id?: string; used?: number };
+export function upsertOffer(input: OfferInput) {
   if (input.id) {
     const o = OFFERS.find((x) => x.id === input.id);
     if (!o) return;
