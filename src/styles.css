@@ -215,6 +215,9 @@
   .stamp-rotate-l { transform: rotate(-2deg); }
   .stamp-rotate-r { transform: rotate(2deg); }
 
+  .scrollbar-none::-webkit-scrollbar { display: none; }
+  .scrollbar-none { scrollbar-width: none; -ms-overflow-style: none; }
+
   .line-art {
     /* Make black ink illustrations adopt the brown ink color via filter */
     filter: brightness(0) saturate(100%) invert(13%) sepia(28%) saturate(1280%) hue-rotate(2deg) brightness(94%) contrast(92%);

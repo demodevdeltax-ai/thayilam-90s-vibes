@@ -3,6 +3,7 @@ import { FlowerIcon, MangoIcon, RibbonIcon } from "./icons";
 export function Story() {
   return (
     <section id="story" className="relative py-20 md:py-28">
+      <span id="about" className="block -mt-24 pt-24" aria-hidden />
       <div className="mx-auto max-w-6xl px-6 grid md:grid-cols-2 gap-12 md:gap-20 items-center">
         <div className="relative">
           <div className="aspect-[4/5] paper-sand ink-border rounded-3xl p-8 relative overflow-hidden">
