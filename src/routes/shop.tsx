@@ -15,10 +15,10 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import {
-  PRODUCTS,
   SORT_OPTIONS,
   type SortOption,
 } from "@/lib/products";
+import { useAllProducts } from "@/lib/products-store";
 
 export const Route = createFileRoute("/shop")({
   component: ShopPage,
@@ -50,6 +50,7 @@ const DEFAULT_FILTERS: Filters = {
 };
 
 function ShopPage() {
+  const PRODUCTS = useAllProducts();
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [sort, setSort] = useState<SortOption>("Newest");
   const [page, setPage] = useState(1);
@@ -58,7 +59,6 @@ function ShopPage() {
   const filtered = useMemo(() => {
     const list = PRODUCTS.filter((p) => {
       if (filters.categories.length && !filters.categories.includes(p.category)) return false;
-      if (filters.vendors.length && !filters.vendors.includes(p.vendor)) return false;
       if (filters.weights.length && !filters.weights.includes(p.weight)) return false;
       if (filters.diets.length && !filters.diets.some((d) => p.diet.includes(d))) return false;
       if (p.price < filters.price[0] || p.price > filters.price[1]) return false;
@@ -81,7 +81,7 @@ function ShopPage() {
         sorted.sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt));
     }
     return sorted;
-  }, [filters, sort]);
+  }, [PRODUCTS, filters, sort]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);

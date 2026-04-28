@@ -18,14 +18,16 @@ import { ProductCard } from "@/components/product-card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { LeafIcon, FlowerIcon } from "@/components/icons";
-import { PRODUCTS, rupee, type Product, type Weight } from "@/lib/products";
+import { rupee, type Weight } from "@/lib/products";
+import { useAllProducts, loadProducts, getCachedProduct } from "@/lib/products-store";
 import { useCart } from "@/lib/cart";
 import { useNavigate } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/shop/$productId")({
   component: ProductDetailPage,
-  loader: ({ params }) => {
-    const product = PRODUCTS.find((p) => p.id === params.productId);
+  loader: async ({ params }) => {
+    await loadProducts();
+    const product = getCachedProduct(params.productId);
     if (!product) throw notFound();
     return { product };
   },
@@ -37,12 +39,12 @@ export const Route = createFileRoute("/shop/$productId")({
         { title: `${p.name} — Thayilam` },
         {
           name: "description",
-          content: `${p.name} (${p.telugu}) by ${p.vendor}. ${p.weight} pack at ${rupee(p.price)}. Hand-rolled in Chennai, ships within 24 hours.`,
+          content: `${p.name} (${p.telugu}). ${p.weight} pack at ${rupee(p.price)}. Hand-rolled in Chennai, ships within 24 hours.`,
         },
         { property: "og:title", content: `${p.name} — Thayilam` },
         {
           property: "og:description",
-          content: `Small-batch ${p.category.toLowerCase()} from ${p.vendor}. Made fresh, no preservatives.`,
+          content: `Small-batch ${p.category.toLowerCase()}. Made fresh, no preservatives.`,
         },
         { property: "og:image", content: p.img },
         { property: "twitter:image", content: p.img },
@@ -103,6 +105,7 @@ function Stars({ value, size = 14 }: { value: number; size?: number }) {
 
 function ProductDetailPage() {
   const { product } = Route.useLoaderData();
+  const PRODUCTS = useAllProducts();
 
   const [zoomXY, setZoomXY] = useState<{ x: number; y: number } | null>(null);
   const [activeImg, setActiveImg] = useState(0);
@@ -119,8 +122,8 @@ function ProductDetailPage() {
   // Build a small gallery from this and a few sibling images
   const gallery = useMemo(() => {
     const others = PRODUCTS.filter((p) => p.id !== product.id).slice(0, 3).map((p) => p.img);
-    return [product.img, ...others];
-  }, [product]);
+    return [product.img, ...others].filter(Boolean);
+  }, [product, PRODUCTS]);
 
   // Recommendation algorithm:
   // 1. Score each other product:
