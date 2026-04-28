@@ -17,11 +17,9 @@ import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as ShopProductIdRouteImport } from './routes/shop.$productId'
-import { Route as AdminVendorsRouteImport } from './routes/admin.vendors'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminReportsRouteImport } from './routes/admin.reports'
 import { Route as AdminProductsRouteImport } from './routes/admin.products'
-import { Route as AdminPayoutsRouteImport } from './routes/admin.payouts'
 import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
 import { Route as AdminNotificationsRouteImport } from './routes/admin.notifications'
 import { Route as AdminCustomersRouteImport } from './routes/admin.customers'
@@ -69,11 +67,6 @@ const ShopProductIdRoute = ShopProductIdRouteImport.update({
   path: '/$productId',
   getParentRoute: () => ShopRoute,
 } as any)
-const AdminVendorsRoute = AdminVendorsRouteImport.update({
-  id: '/vendors',
-  path: '/vendors',
-  getParentRoute: () => AdminRoute,
-} as any)
 const AdminSettingsRoute = AdminSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -87,11 +80,6 @@ const AdminReportsRoute = AdminReportsRouteImport.update({
 const AdminProductsRoute = AdminProductsRouteImport.update({
   id: '/products',
   path: '/products',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminPayoutsRoute = AdminPayoutsRouteImport.update({
-  id: '/payouts',
-  path: '/payouts',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminOrdersRoute = AdminOrdersRouteImport.update({
@@ -138,11 +126,9 @@ export interface FileRoutesByFullPath {
   '/admin/customers': typeof AdminCustomersRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/orders': typeof AdminOrdersRoute
-  '/admin/payouts': typeof AdminPayoutsRoute
   '/admin/products': typeof AdminProductsRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/settings': typeof AdminSettingsRoute
-  '/admin/vendors': typeof AdminVendorsRoute
   '/shop/$productId': typeof ShopProductIdRoute
   '/admin/': typeof AdminIndexRoute
 }
@@ -158,11 +144,9 @@ export interface FileRoutesByTo {
   '/admin/customers': typeof AdminCustomersRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/orders': typeof AdminOrdersRoute
-  '/admin/payouts': typeof AdminPayoutsRoute
   '/admin/products': typeof AdminProductsRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/settings': typeof AdminSettingsRoute
-  '/admin/vendors': typeof AdminVendorsRoute
   '/shop/$productId': typeof ShopProductIdRoute
   '/admin': typeof AdminIndexRoute
 }
@@ -180,11 +164,9 @@ export interface FileRoutesById {
   '/admin/customers': typeof AdminCustomersRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/orders': typeof AdminOrdersRoute
-  '/admin/payouts': typeof AdminPayoutsRoute
   '/admin/products': typeof AdminProductsRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/settings': typeof AdminSettingsRoute
-  '/admin/vendors': typeof AdminVendorsRoute
   '/shop/$productId': typeof ShopProductIdRoute
   '/admin/': typeof AdminIndexRoute
 }
@@ -203,11 +185,9 @@ export interface FileRouteTypes {
     | '/admin/customers'
     | '/admin/notifications'
     | '/admin/orders'
-    | '/admin/payouts'
     | '/admin/products'
     | '/admin/reports'
     | '/admin/settings'
-    | '/admin/vendors'
     | '/shop/$productId'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
@@ -223,11 +203,9 @@ export interface FileRouteTypes {
     | '/admin/customers'
     | '/admin/notifications'
     | '/admin/orders'
-    | '/admin/payouts'
     | '/admin/products'
     | '/admin/reports'
     | '/admin/settings'
-    | '/admin/vendors'
     | '/shop/$productId'
     | '/admin'
   id:
@@ -244,11 +222,9 @@ export interface FileRouteTypes {
     | '/admin/customers'
     | '/admin/notifications'
     | '/admin/orders'
-    | '/admin/payouts'
     | '/admin/products'
     | '/admin/reports'
     | '/admin/settings'
-    | '/admin/vendors'
     | '/shop/$productId'
     | '/admin/'
   fileRoutesById: FileRoutesById
@@ -320,13 +296,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShopProductIdRouteImport
       parentRoute: typeof ShopRoute
     }
-    '/admin/vendors': {
-      id: '/admin/vendors'
-      path: '/vendors'
-      fullPath: '/admin/vendors'
-      preLoaderRoute: typeof AdminVendorsRouteImport
-      parentRoute: typeof AdminRoute
-    }
     '/admin/settings': {
       id: '/admin/settings'
       path: '/settings'
@@ -346,13 +315,6 @@ declare module '@tanstack/react-router' {
       path: '/products'
       fullPath: '/admin/products'
       preLoaderRoute: typeof AdminProductsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/payouts': {
-      id: '/admin/payouts'
-      path: '/payouts'
-      fullPath: '/admin/payouts'
-      preLoaderRoute: typeof AdminPayoutsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/orders': {
@@ -407,11 +369,9 @@ interface AdminRouteChildren {
   AdminCustomersRoute: typeof AdminCustomersRoute
   AdminNotificationsRoute: typeof AdminNotificationsRoute
   AdminOrdersRoute: typeof AdminOrdersRoute
-  AdminPayoutsRoute: typeof AdminPayoutsRoute
   AdminProductsRoute: typeof AdminProductsRoute
   AdminReportsRoute: typeof AdminReportsRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
-  AdminVendorsRoute: typeof AdminVendorsRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
@@ -422,11 +382,9 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminCustomersRoute: AdminCustomersRoute,
   AdminNotificationsRoute: AdminNotificationsRoute,
   AdminOrdersRoute: AdminOrdersRoute,
-  AdminPayoutsRoute: AdminPayoutsRoute,
   AdminProductsRoute: AdminProductsRoute,
   AdminReportsRoute: AdminReportsRoute,
   AdminSettingsRoute: AdminSettingsRoute,
-  AdminVendorsRoute: AdminVendorsRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
 

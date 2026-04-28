@@ -2,11 +2,9 @@ import { Link, Outlet, useLocation } from "@tanstack/react-router";
 import { useState } from "react";
 import {
   LayoutDashboard,
-  Store,
   Package,
   ShoppingCart,
   Users,
-  Wallet,
   Tag,
   Megaphone,
   BarChart3,
@@ -23,11 +21,9 @@ import { pendingApprovalsCount } from "@/lib/admin-data";
 type NavItem = { to: string; label: string; Icon: typeof LayoutDashboard; exact?: boolean };
 const NAV: NavItem[] = [
   { to: "/admin", label: "Dashboard", Icon: LayoutDashboard, exact: true },
-  { to: "/admin/vendors", label: "Vendors", Icon: Store },
   { to: "/admin/products", label: "Products", Icon: Package },
   { to: "/admin/orders", label: "Orders", Icon: ShoppingCart },
   { to: "/admin/customers", label: "Customers", Icon: Users },
-  { to: "/admin/payouts", label: "Payouts", Icon: Wallet },
   { to: "/admin/categories", label: "Categories", Icon: Tag },
   { to: "/admin/banners", label: "Homepage banners", Icon: Megaphone },
   { to: "/admin/coupons", label: "Coupons & offers", Icon: Ticket },
