@@ -1,14 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Search, CheckCircle2, X, Star, Flag, Trash2, Pencil, Download, Upload } from "lucide-react";
+import { Search, CheckCircle2, X, Star, Flag, Trash2, Pencil, Download, Upload, Package2 } from "lucide-react";
 import {
   AdminPageHeader, AdminCard, AdminBadge, TableShell, Th, Td, rupee,
 } from "@/components/admin/ui";
-import { PRODUCTS, CATEGORIES } from "@/lib/products";
+import { CATEGORIES } from "@/lib/products";
 import {
   useApprovals, useFeatured, useFlagged,
   setApproval, toggleFeatured, toggleFlag,
 } from "@/lib/admin-store";
+import { useAllProducts } from "@/lib/products-store";
+import { PackSizesPill, SkuPill } from "@/components/admin/pack-breakdown";
+import { PackSizeEditor } from "@/components/admin/pack-size-editor";
+import type { Product } from "@/lib/products";
 
 export const Route = createFileRoute("/admin/products")({
   head: () => ({ meta: [{ title: "Products — Super Admin" }] }),
