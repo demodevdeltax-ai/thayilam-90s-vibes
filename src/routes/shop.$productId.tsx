@@ -385,6 +385,19 @@ function ProductDetailPage() {
                 </span>
               </div>
 
+              {product.highlights.length > 0 && (
+                <div className="mt-4 flex flex-wrap gap-1.5">
+                  {product.highlights.slice(0, 5).map((h) => (
+                    <span
+                      key={h}
+                      className="text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-full ink-border-thin text-brown bg-cream"
+                    >
+                      {h}
+                    </span>
+                  ))}
+                </div>
+              )}
+
               <div className="dashed-rule my-6" />
 
               {/* price */}
