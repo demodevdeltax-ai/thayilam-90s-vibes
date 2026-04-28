@@ -289,29 +289,25 @@ function ProductDetailPage() {
               </TabsList>
 
               <TabsContent value="description" className="paper-sand ink-border-thin rounded-2xl p-6 md:p-7 mt-5">
-                <p className="text-brown/85 leading-relaxed">
-                  Slow-roasted, hand-shaped, and finished with a pinch of cardamom — our{" "}
-                  <span className="font-display italic">{product.name}</span> is made
-                  the way <em>paati</em> made it: in a blackened iron kadai, on a Friday afternoon,
-                  with the radio on low. We make {product.category.toLowerCase()} in
-                  small batches from {product.vendor}'s kitchen and box every order
-                  by hand the same morning it ships.
+                <p className="text-brown/85 leading-relaxed whitespace-pre-line">
+                  {product.description}
                 </p>
-                <ul className="mt-5 grid sm:grid-cols-2 gap-y-2 gap-x-6 text-sm text-brown/80">
-                  {[
-                    "Stone-ground flours",
-                    "A2 cow ghee",
-                    "Cold-pressed groundnut oil",
-                    "No palm oil, ever",
-                    "No artificial colours",
-                    "No preservatives",
-                  ].map((b) => (
-                    <li key={b} className="flex items-center gap-2">
-                      <LeafIcon size={14} className="text-olive" />
-                      {b}
-                    </li>
-                  ))}
-                </ul>
+                {product.highlights.length > 0 && (
+                  <>
+                    <div className="dashed-rule my-5" />
+                    <div className="text-[11px] uppercase tracking-[0.25em] text-brown/60 mb-3">
+                      What makes it special
+                    </div>
+                    <ul className="grid sm:grid-cols-2 gap-y-2 gap-x-6 text-sm text-brown/85">
+                      {product.highlights.map((h) => (
+                        <li key={h} className="flex items-center gap-2">
+                          <LeafIcon size={14} className="text-olive shrink-0" />
+                          {h}
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
               </TabsContent>
 
               <TabsContent value="ingredients" className="paper-sand ink-border-thin rounded-2xl p-6 md:p-7 mt-5">
