@@ -33,6 +33,31 @@ export type Product = {
   createdAt: string; // ISO
   img: string;
   badge?: string;
+  // Admin-only: pack sizes (in grams) the store stocks for this product, and an
+  // internal SKU code. Customers never see either.
+  packSizes: number[];
+  sku: string;
+};
+
+// Defaults applied to seed data based on category. Admin can edit per-product.
+const CATEGORY_PACKS: Record<Category, number[]> = {
+  Ladoo: [100, 250, 1000],
+  Sweets: [100, 250, 500],
+  Murukku: [100, 250, 500],
+  Chakli: [100, 250, 500],
+  Mixture: [100, 250, 500],
+  Pickle: [100, 250],
+  Pappad: [100, 250],
+};
+
+const SKU_PREFIX: Record<Category, string> = {
+  Ladoo: "LAD",
+  Sweets: "SWT",
+  Murukku: "MUR",
+  Chakli: "CHK",
+  Mixture: "MIX",
+  Pickle: "PKL",
+  Pappad: "PAP",
 };
 
 export const VENDORS = [

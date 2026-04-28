@@ -22,7 +22,7 @@ const WEIGHT_TO_GRAMS: Record<string, number> = {
 };
 
 export function weightToGrams(w: string): number {
-  return WEIGHT_TO_GRAMS[w] ?? parseInt(w, 10) || 0;
+  return WEIGHT_TO_GRAMS[w] ?? (parseInt(w, 10) || 0);
 }
 
 export function formatGrams(g: number): string {
