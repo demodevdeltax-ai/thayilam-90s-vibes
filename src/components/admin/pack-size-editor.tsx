@@ -25,12 +25,18 @@ export function PackSizeEditor({
   const [sizes, setSizes] = useState<number[]>([]);
   const [sku, setSku] = useState("");
   const [draft, setDraft] = useState("");
+  const [description, setDescription] = useState("");
+  const [highlights, setHighlights] = useState<string[]>([]);
+  const [hlDraft, setHlDraft] = useState("");
 
   useEffect(() => {
     if (product) {
       setSizes([...product.packSizes].sort((a, b) => a - b));
       setSku(product.sku);
       setDraft("");
+      setDescription(product.description);
+      setHighlights([...product.highlights]);
+      setHlDraft("");
     }
   }, [product]);
 
@@ -43,19 +49,31 @@ export function PackSizeEditor({
   };
   const removeSize = (n: number) => setSizes(sizes.filter((s) => s !== n));
 
+  const addHighlight = (raw: string) => {
+    const v = raw.trim();
+    if (!v) return;
+    if (highlights.some((h) => h.toLowerCase() === v.toLowerCase())) return;
+    if (highlights.length >= 8) return;
+    setHighlights([...highlights, v]);
+  };
+  const removeHighlight = (h: string) =>
+    setHighlights(highlights.filter((x) => x !== h));
+
   const save = () => {
     updatePackSizes(product.id, sizes);
-    if (sku.trim() && sku !== product.sku) {
-      updateProduct(product.id, { sku: sku.trim().toUpperCase() });
-    }
+    updateProduct(product.id, {
+      sku: sku.trim().toUpperCase() || product.sku,
+      description: description.trim() || product.description,
+      highlights,
+    });
     onClose();
   };
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="bg-white max-w-md">
+      <DialogContent className="bg-white max-w-xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-slate-900">Edit pack details</DialogTitle>
+          <DialogTitle className="text-slate-900">Edit product</DialogTitle>
           <p className="text-xs text-slate-500 mt-1">{product.name}</p>
         </DialogHeader>
 
@@ -71,6 +89,66 @@ export function PackSizeEditor({
               placeholder="THY-LAD-001"
             />
             <p className="text-[11px] text-slate-400 mt-1">Shown only on admin pages — never to customers.</p>
+          </div>
+
+          <div>
+            <label className="block text-[11px] uppercase tracking-wider text-slate-500 font-medium mb-1.5">
+              Product description
+            </label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={5}
+              className="w-full px-3 py-2 rounded-md border border-slate-200 text-sm bg-slate-50 focus:bg-white focus:outline-none focus:border-slate-400 leading-relaxed"
+              placeholder="Tell the customer how this is made, what's in it, and why it's special…"
+            />
+            <p className="text-[11px] text-slate-400 mt-1">
+              Shown to customers on the product page.
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-[11px] uppercase tracking-wider text-slate-500 font-medium mb-1.5">
+              Highlight tags
+            </label>
+            <div className="flex flex-wrap gap-1.5 min-h-[36px] p-2 rounded-md border border-slate-200 bg-slate-50">
+              {highlights.length === 0 && (
+                <span className="text-xs text-slate-400 italic">No highlights yet</span>
+              )}
+              {highlights.map((h) => (
+                <span
+                  key={h}
+                  className="inline-flex items-center gap-1 text-xs font-medium px-2 h-6 rounded bg-[#C4541A]/10 text-[#A0400F] border border-[#C4541A]/30"
+                >
+                  {h}
+                  <button onClick={() => removeHighlight(h)} className="hover:text-rose-600" aria-label={`Remove ${h}`}>
+                    <X size={11} />
+                  </button>
+                </span>
+              ))}
+            </div>
+            <div className="mt-2 flex gap-2">
+              <input
+                value={hlDraft}
+                onChange={(e) => setHlDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    addHighlight(hlDraft);
+                    setHlDraft("");
+                  }
+                }}
+                placeholder="e.g. Hand-rolled, A2 ghee, Vegan"
+                className="flex-1 h-9 px-3 rounded-md border border-slate-200 text-sm bg-white focus:outline-none focus:border-slate-400"
+              />
+              <button
+                onClick={() => { addHighlight(hlDraft); setHlDraft(""); }}
+                className="inline-flex items-center gap-1 h-9 px-3 rounded-md bg-slate-900 text-white text-xs font-medium hover:bg-slate-800"
+              >
+                <Plus size={13} /> Add
+              </button>
+            </div>
+            <p className="text-[11px] text-slate-400 mt-1">Up to 8 short tags. Shown as chips on the product page.</p>
           </div>
 
           <div>
@@ -116,10 +194,7 @@ export function PackSizeEditor({
                 className="flex-1 h-9 px-3 rounded-md border border-slate-200 text-sm bg-white focus:outline-none focus:border-slate-400"
               />
               <button
-                onClick={() => {
-                  addSize(parseInt(draft, 10));
-                  setDraft("");
-                }}
+                onClick={() => { addSize(parseInt(draft, 10)); setDraft(""); }}
                 className="inline-flex items-center gap-1 h-9 px-3 rounded-md bg-slate-900 text-white text-xs font-medium hover:bg-slate-800"
               >
                 <Plus size={13} /> Add
