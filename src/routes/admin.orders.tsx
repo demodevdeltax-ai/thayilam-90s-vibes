@@ -5,8 +5,9 @@ import {
   AdminPageHeader, AdminCard, AdminBadge, TableShell, Th, Td, rupee,
 } from "@/components/admin/ui";
 import { ORDERS, type OrderStatus } from "@/lib/vendor-data";
-import { VENDORS } from "@/lib/products";
+import { VENDORS, PRODUCTS } from "@/lib/products";
 import { setOrderStatus } from "@/lib/vendor-store";
+import { OrderItemBreakdown, SkuPill } from "@/components/admin/pack-breakdown";
 
 export const Route = createFileRoute("/admin/orders")({
   head: () => ({ meta: [{ title: "Orders — Super Admin" }] }),
@@ -125,14 +126,26 @@ function OrdersPage() {
                       <td colSpan={8} className="px-6 py-4 border-b border-slate-200">
                         <div className="grid md:grid-cols-3 gap-6">
                           <div>
-                            <div className="text-[11px] uppercase tracking-wider text-slate-500 mb-2 font-medium">Items</div>
-                            <ul className="space-y-1.5">
-                              {o.items.map((i, idx) => (
-                                <li key={idx} className="flex items-center justify-between text-sm">
-                                  <span className="text-slate-700">{i.name} <span className="text-slate-400">· {i.weight} × {i.qty}</span></span>
-                                  <span className="tabular-nums font-medium">{rupee(i.unitPrice * i.qty)}</span>
-                                </li>
-                              ))}
+                            <div className="text-[11px] uppercase tracking-wider text-slate-500 mb-2 font-medium">Items &amp; pack breakdown</div>
+                            <ul className="space-y-3">
+                              {o.items.map((i, idx) => {
+                                const product = PRODUCTS.find((p) => p.id === i.productId);
+                                return (
+                                  <li key={idx} className="text-sm border-l-2 border-[#6B7C4A]/30 pl-3">
+                                    <div className="flex items-center justify-between gap-2">
+                                      <div className="flex items-center gap-2 min-w-0">
+                                        <span className="text-slate-800 font-medium truncate">{i.name}</span>
+                                        {product && <SkuPill sku={product.sku} />}
+                                      </div>
+                                      <span className="tabular-nums font-medium shrink-0">{rupee(i.unitPrice * i.qty)}</span>
+                                    </div>
+                                    <div className="text-xs text-slate-500 mt-0.5">
+                                      Customer ordered: <span className="text-slate-700 font-medium">{i.weight} × {i.qty}</span>
+                                    </div>
+                                    <OrderItemBreakdown productId={i.productId} weight={i.weight} qty={i.qty} />
+                                  </li>
+                                );
+                              })}
                             </ul>
                           </div>
                           <div>
