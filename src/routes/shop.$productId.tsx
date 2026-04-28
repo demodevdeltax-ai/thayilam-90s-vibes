@@ -527,9 +527,9 @@ function ProductDetailPage() {
           <div className="mx-auto max-w-7xl px-5 md:px-8 py-14 md:py-20">
             <div className="flex items-end justify-between mb-8">
               <div>
-                <div className="text-[11px] tracking-[0.3em] uppercase text-olive mb-2">— You might also like —</div>
+                <div className="text-[11px] tracking-[0.3em] uppercase text-olive mb-2">— Picked just for you —</div>
                 <h2 className="font-display text-3xl md:text-4xl text-brown">
-                  Tied with the same thread
+                  More from the dabba
                 </h2>
               </div>
               <Link to="/shop" className="hidden sm:inline text-xs uppercase tracking-widest text-rust hover:underline">
