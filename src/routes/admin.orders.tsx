@@ -5,7 +5,7 @@ import {
   AdminPageHeader, AdminCard, AdminBadge, TableShell, Th, Td, rupee,
 } from "@/components/admin/ui";
 import { ORDERS, type OrderStatus } from "@/lib/vendor-data";
-import { VENDORS, PRODUCTS } from "@/lib/products";
+import { PRODUCTS } from "@/lib/products";
 import { setOrderStatus } from "@/lib/vendor-store";
 import { OrderItemBreakdown, SkuPill } from "@/components/admin/pack-breakdown";
 
