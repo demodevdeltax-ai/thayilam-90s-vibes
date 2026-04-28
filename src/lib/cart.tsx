@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { PRODUCTS, type Product, type Weight } from "@/lib/products";
+import type { Product, Weight } from "@/lib/products";
+import { getCachedProduct, loadProducts, useAllProducts } from "@/lib/products-store";
 
 export type CartItem = {
   id: string; // composite: productId|weight
@@ -26,6 +27,8 @@ const KEY = "thayilam-cart-v1";
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [hydrated, setHydrated] = useState(false);
+  // Trigger product loading so add()/getProduct() find data.
+  const products = useAllProducts();
 
   useEffect(() => {
     try {
@@ -47,13 +50,18 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [items, hydrated]);
 
   const getProduct = useCallback(
-    (productId: string) => PRODUCTS.find((p) => p.id === productId),
-    [],
+    (productId: string) => products.find((p) => p.id === productId) ?? getCachedProduct(productId),
+    [products],
   );
 
-  const add = useCallback<CartCtx["add"]>((productId, weight, qty = 1, unitPrice) => {
-    const product = PRODUCTS.find((p) => p.id === productId);
-    if (!product) return;
+  const add = useCallback<CartCtx["add"]>(async (productId, weight, qty = 1, unitPrice) => {
+    let product = getCachedProduct(productId) ?? products.find((p) => p.id === productId);
+    if (!product) {
+      // Make sure products are loaded before bailing.
+      await loadProducts();
+      product = getCachedProduct(productId);
+      if (!product) return;
+    }
     const w = weight ?? product.weight;
     const price = unitPrice ?? product.price;
     const id = `${productId}|${w}`;
@@ -64,7 +72,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
       return [...prev, { id, productId, weight: w, qty, unitPrice: price }];
     });
-  }, []);
+  }, [products]);
 
   const setQty = useCallback<CartCtx["setQty"]>((id, qty) => {
     setItems((prev) =>
