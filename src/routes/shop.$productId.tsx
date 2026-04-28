@@ -122,13 +122,48 @@ function ProductDetailPage() {
     return [product.img, ...others];
   }, [product]);
 
-  const related = useMemo(
-    () =>
-      PRODUCTS.filter(
-        (p) => p.id !== product.id && (p.category === product.category || p.vendor === product.vendor),
-      ).slice(0, 6),
-    [product],
-  );
+  // Recommendation algorithm:
+  // 1. Score each other product:
+  //    +5 same category, +3 shared diet tag, +2 similar price (within 30%),
+  //    +1 popularity boost (popularity / 100), +2 cross-category bonus
+  //    (so we always surface variety from other categories), -2 same vendor
+  //    (we DO want different makers represented).
+  // 2. Take top 8, then ensure at least 3 different categories in the final
+  //    list of 6 by reshuffling.
+  const related = useMemo(() => {
+    const scored = PRODUCTS.filter((p) => p.id !== product.id).map((p) => {
+      let s = 0;
+      if (p.category === product.category) s += 5;
+      const sharedDiet = p.diet.filter((d) => product.diet.includes(d)).length;
+      s += sharedDiet * 3;
+      const priceDelta = Math.abs(p.price - product.price) / product.price;
+      if (priceDelta < 0.3) s += 2;
+      s += p.popularity / 100;
+      if (p.category !== product.category) s += 2; // cross-category variety bonus
+      return { p, s, cat: p.category };
+    });
+    scored.sort((a, b) => b.s - a.s);
+
+    // Diversify: ensure at least 3 distinct categories among top 6.
+    const picked: typeof scored = [];
+    const catCount: Record<string, number> = {};
+    for (const item of scored) {
+      const c = catCount[item.cat] ?? 0;
+      // Cap any single category to 2 picks until we have 6 items.
+      if (c >= 2 && picked.length < 6) continue;
+      picked.push(item);
+      catCount[item.cat] = c + 1;
+      if (picked.length === 6) break;
+    }
+    // Fallback: top up if we didn't reach 6 due to caps.
+    if (picked.length < 6) {
+      for (const item of scored) {
+        if (picked.length >= 6) break;
+        if (!picked.find((x) => x.p.id === item.p.id)) picked.push(item);
+      }
+    }
+    return picked.map((x) => x.p);
+  }, [product]);
 
   const unitPrice = Math.round(product.price * WEIGHT_MULT[weight]);
   const unitMrp = product.mrp ? Math.round(product.mrp * WEIGHT_MULT[weight]) : undefined;
@@ -254,29 +289,25 @@ function ProductDetailPage() {
               </TabsList>
 
               <TabsContent value="description" className="paper-sand ink-border-thin rounded-2xl p-6 md:p-7 mt-5">
-                <p className="text-brown/85 leading-relaxed">
-                  Slow-roasted, hand-shaped, and finished with a pinch of cardamom — our{" "}
-                  <span className="font-display italic">{product.name}</span> is made
-                  the way <em>paati</em> made it: in a blackened iron kadai, on a Friday afternoon,
-                  with the radio on low. We make {product.category.toLowerCase()} in
-                  small batches from {product.vendor}'s kitchen and box every order
-                  by hand the same morning it ships.
+                <p className="text-brown/85 leading-relaxed whitespace-pre-line">
+                  {product.description}
                 </p>
-                <ul className="mt-5 grid sm:grid-cols-2 gap-y-2 gap-x-6 text-sm text-brown/80">
-                  {[
-                    "Stone-ground flours",
-                    "A2 cow ghee",
-                    "Cold-pressed groundnut oil",
-                    "No palm oil, ever",
-                    "No artificial colours",
-                    "No preservatives",
-                  ].map((b) => (
-                    <li key={b} className="flex items-center gap-2">
-                      <LeafIcon size={14} className="text-olive" />
-                      {b}
-                    </li>
-                  ))}
-                </ul>
+                {product.highlights.length > 0 && (
+                  <>
+                    <div className="dashed-rule my-5" />
+                    <div className="text-[11px] uppercase tracking-[0.25em] text-brown/60 mb-3">
+                      What makes it special
+                    </div>
+                    <ul className="grid sm:grid-cols-2 gap-y-2 gap-x-6 text-sm text-brown/85">
+                      {product.highlights.map((h) => (
+                        <li key={h} className="flex items-center gap-2">
+                          <LeafIcon size={14} className="text-olive shrink-0" />
+                          {h}
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
               </TabsContent>
 
               <TabsContent value="ingredients" className="paper-sand ink-border-thin rounded-2xl p-6 md:p-7 mt-5">
@@ -353,6 +384,19 @@ function ProductDetailPage() {
                   {avgRating.toFixed(1)} · {totalReviews} reviews
                 </span>
               </div>
+
+              {product.highlights.length > 0 && (
+                <div className="mt-4 flex flex-wrap gap-1.5">
+                  {product.highlights.slice(0, 5).map((h) => (
+                    <span
+                      key={h}
+                      className="text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-full ink-border-thin text-brown bg-cream"
+                    >
+                      {h}
+                    </span>
+                  ))}
+                </div>
+              )}
 
               <div className="dashed-rule my-6" />
 
@@ -483,9 +527,9 @@ function ProductDetailPage() {
           <div className="mx-auto max-w-7xl px-5 md:px-8 py-14 md:py-20">
             <div className="flex items-end justify-between mb-8">
               <div>
-                <div className="text-[11px] tracking-[0.3em] uppercase text-olive mb-2">— You might also like —</div>
+                <div className="text-[11px] tracking-[0.3em] uppercase text-olive mb-2">— Picked just for you —</div>
                 <h2 className="font-display text-3xl md:text-4xl text-brown">
-                  Tied with the same thread
+                  More from the dabba
                 </h2>
               </div>
               <Link to="/shop" className="hidden sm:inline text-xs uppercase tracking-widest text-rust hover:underline">

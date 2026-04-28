@@ -16,7 +16,7 @@ function subscribe(l: Listener) {
 
 export function updateProduct(
   id: string,
-  patch: Partial<Pick<Product, "packSizes" | "sku" | "price" | "name">>,
+  patch: Partial<Pick<Product, "packSizes" | "sku" | "price" | "name" | "description" | "highlights">>,
 ) {
   const p = PRODUCTS.find((x) => x.id === id);
   if (!p) return;

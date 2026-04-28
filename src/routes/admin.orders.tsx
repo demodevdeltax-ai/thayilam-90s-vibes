@@ -5,7 +5,7 @@ import {
   AdminPageHeader, AdminCard, AdminBadge, TableShell, Th, Td, rupee,
 } from "@/components/admin/ui";
 import { ORDERS, type OrderStatus } from "@/lib/vendor-data";
-import { VENDORS, PRODUCTS } from "@/lib/products";
+import { PRODUCTS } from "@/lib/products";
 import { setOrderStatus } from "@/lib/vendor-store";
 import { OrderItemBreakdown, SkuPill } from "@/components/admin/pack-breakdown";
 
@@ -20,31 +20,27 @@ const PAYMENTS = ["UPI", "Card", "Net Banking", "COD"] as const;
 function OrdersPage() {
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<"All" | OrderStatus>("All");
-  const [vendor, setVendor] = useState<string>("All");
   const [payment, setPayment] = useState<string>("All");
   const [openId, setOpenId] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     return ORDERS.filter((o) => {
       if (status !== "All" && o.status !== status) return false;
-      if (vendor !== "All" && !o.items.some((i) => {
-        return true;
-      }) && vendor !== "All") return false;
       if (q && !o.id.toLowerCase().includes(q.toLowerCase()) && !o.customer.name.toLowerCase().includes(q.toLowerCase())) return false;
       return true;
     });
-  }, [q, status, vendor, payment]);
+  }, [q, status, payment]);
 
   return (
     <>
       <AdminPageHeader
-        title="Platform orders"
-        subtitle="Every order across every vendor — filter, override, refund."
+        title="Orders"
+        subtitle="Every order across the store — filter, override, refund."
         actions={<span className="text-xs text-slate-500">{filtered.length} orders</span>}
       />
 
       <AdminCard padding={false}>
-        <div className="p-4 border-b border-slate-100 grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="p-4 border-b border-slate-100 grid sm:grid-cols-3 gap-3">
           <div className="relative">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
@@ -57,10 +53,6 @@ function OrdersPage() {
           <select value={status} onChange={(e) => setStatus(e.target.value as "All" | OrderStatus)} className="h-9 px-3 rounded-md border border-slate-200 text-sm bg-white focus:outline-none">
             <option>All</option>
             {STATUSES.map((s) => <option key={s}>{s}</option>)}
-          </select>
-          <select value={vendor} onChange={(e) => setVendor(e.target.value)} className="h-9 px-3 rounded-md border border-slate-200 text-sm bg-white focus:outline-none">
-            <option value="All">All vendors</option>
-            {VENDORS.map((v) => <option key={v} value={v}>{v}</option>)}
           </select>
           <select value={payment} onChange={(e) => setPayment(e.target.value)} className="h-9 px-3 rounded-md border border-slate-200 text-sm bg-white focus:outline-none">
             <option value="All">All payments</option>
