@@ -299,7 +299,7 @@ function ProductDetailPage() {
                       What makes it special
                     </div>
                     <ul className="grid sm:grid-cols-2 gap-y-2 gap-x-6 text-sm text-brown/85">
-                      {product.highlights.map((h) => (
+                      {product.highlights.map((h: string) => (
                         <li key={h} className="flex items-center gap-2">
                           <LeafIcon size={14} className="text-olive shrink-0" />
                           {h}
@@ -387,7 +387,7 @@ function ProductDetailPage() {
 
               {product.highlights.length > 0 && (
                 <div className="mt-4 flex flex-wrap gap-1.5">
-                  {product.highlights.slice(0, 5).map((h) => (
+                  {product.highlights.slice(0, 5).map((h: string) => (
                     <span
                       key={h}
                       className="text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-full ink-border-thin text-brown bg-cream"
