@@ -115,7 +115,7 @@ function DashboardPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium text-slate-900 truncate">{p.name}</div>
-                  <div className="text-xs text-slate-500 truncate">{p.category}</div>
+                  <div className="text-xs text-slate-500 truncate">{p.vendor}</div>
                 </div>
                 <div className="text-right">
                   <div className="text-sm font-semibold text-slate-900 tabular-nums">{p.sales}</div>
