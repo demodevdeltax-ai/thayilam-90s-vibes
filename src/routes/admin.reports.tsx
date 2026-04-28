@@ -5,7 +5,7 @@ import {
   PieChart, Pie, Cell, Legend,
 } from "recharts";
 import { AdminPageHeader, AdminCard, rupee, rupeeShort } from "@/components/admin/ui";
-import { ORDERS_BY_DAY, topEarningVendors, ADMIN_VENDORS } from "@/lib/admin-data";
+import { ORDERS_BY_DAY, topSellingProducts } from "@/lib/admin-data";
 import { PRODUCTS, CATEGORIES } from "@/lib/products";
 
 export const Route = createFileRoute("/admin/reports")({
@@ -16,7 +16,7 @@ export const Route = createFileRoute("/admin/reports")({
 const PIE_COLORS = ["#C4541A", "#6B7C4A", "#3D2310", "#A87341", "#8B9A6B", "#D17F4D", "#5B6B3F"];
 
 function ReportsPage() {
-  const earners = topEarningVendors(7);
+  const top = topSellingProducts(8);
   const last14 = ORDERS_BY_DAY.slice(-14).map((d) => ({
     date: d.date.slice(8),
     gmv: Math.round(d.gmv / 100) / 10, // ₹k
@@ -29,7 +29,6 @@ function ReportsPage() {
 
   const reports = [
     { name: "GMV report — April 2025", type: "PDF", size: "246 KB" },
-    { name: "Vendor commissions — Q1 2025", type: "CSV", size: "82 KB" },
     { name: "Customer retention — March 2025", type: "PDF", size: "318 KB" },
     { name: "Inventory snapshot — 23 Apr 2025", type: "XLSX", size: "194 KB" },
     { name: "Failed payments audit — April 2025", type: "CSV", size: "12 KB" },
@@ -61,8 +60,8 @@ function ReportsPage() {
           <div className="text-[24px] font-semibold mt-1 tabular-nums">{PRODUCTS.length}</div>
         </AdminCard>
         <AdminCard className="border-l-4 border-l-amber-500">
-          <div className="text-[11px] uppercase tracking-wider text-slate-500 font-medium flex items-center gap-1.5"><BarChart3 size={11} /> Active vendors</div>
-          <div className="text-[24px] font-semibold mt-1 tabular-nums">{ADMIN_VENDORS.filter((v) => v.status === "Active").length}</div>
+          <div className="text-[11px] uppercase tracking-wider text-slate-500 font-medium flex items-center gap-1.5"><BarChart3 size={11} /> Categories</div>
+          <div className="text-[24px] font-semibold mt-1 tabular-nums">{CATEGORIES.length}</div>
         </AdminCard>
       </div>
 
@@ -101,18 +100,18 @@ function ReportsPage() {
 
       <div className="grid lg:grid-cols-2 gap-4">
         <AdminCard>
-          <h3 className="text-sm font-semibold text-slate-900 mb-4">Vendor revenue (last month)</h3>
+          <h3 className="text-sm font-semibold text-slate-900 mb-4">Top products (last month)</h3>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={earners} layout="vertical" margin={{ top: 0, right: 16, left: 0, bottom: 0 }}>
+              <BarChart data={top} layout="vertical" margin={{ top: 0, right: 16, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" horizontal={false} />
                 <XAxis type="number" tick={{ fontSize: 11, fill: "#64748B" }} axisLine={false} tickLine={false} />
                 <YAxis dataKey="name" type="category" tick={{ fontSize: 11, fill: "#475569" }} axisLine={false} tickLine={false} width={130} />
                 <Tooltip
                   contentStyle={{ background: "#fff", border: "1px solid #E2E8F0", borderRadius: 6, fontSize: 12 }}
-                  formatter={(v: number) => rupee(v)}
+                  formatter={(v: number) => rupee(v as number)}
                 />
-                <Bar dataKey="monthlyRevenue" fill="#C4541A" radius={[0, 3, 3, 0]} />
+                <Bar dataKey="revenue" fill="#C4541A" radius={[0, 3, 3, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
