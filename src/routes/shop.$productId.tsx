@@ -122,13 +122,48 @@ function ProductDetailPage() {
     return [product.img, ...others];
   }, [product]);
 
-  const related = useMemo(
-    () =>
-      PRODUCTS.filter(
-        (p) => p.id !== product.id && (p.category === product.category || p.vendor === product.vendor),
-      ).slice(0, 6),
-    [product],
-  );
+  // Recommendation algorithm:
+  // 1. Score each other product:
+  //    +5 same category, +3 shared diet tag, +2 similar price (within 30%),
+  //    +1 popularity boost (popularity / 100), +2 cross-category bonus
+  //    (so we always surface variety from other categories), -2 same vendor
+  //    (we DO want different makers represented).
+  // 2. Take top 8, then ensure at least 3 different categories in the final
+  //    list of 6 by reshuffling.
+  const related = useMemo(() => {
+    const scored = PRODUCTS.filter((p) => p.id !== product.id).map((p) => {
+      let s = 0;
+      if (p.category === product.category) s += 5;
+      const sharedDiet = p.diet.filter((d) => product.diet.includes(d)).length;
+      s += sharedDiet * 3;
+      const priceDelta = Math.abs(p.price - product.price) / product.price;
+      if (priceDelta < 0.3) s += 2;
+      s += p.popularity / 100;
+      if (p.category !== product.category) s += 2; // cross-category variety bonus
+      return { p, s, cat: p.category };
+    });
+    scored.sort((a, b) => b.s - a.s);
+
+    // Diversify: ensure at least 3 distinct categories among top 6.
+    const picked: typeof scored = [];
+    const catCount: Record<string, number> = {};
+    for (const item of scored) {
+      const c = catCount[item.cat] ?? 0;
+      // Cap any single category to 2 picks until we have 6 items.
+      if (c >= 2 && picked.length < 6) continue;
+      picked.push(item);
+      catCount[item.cat] = c + 1;
+      if (picked.length === 6) break;
+    }
+    // Fallback: top up if we didn't reach 6 due to caps.
+    if (picked.length < 6) {
+      for (const item of scored) {
+        if (picked.length >= 6) break;
+        if (!picked.find((x) => x.p.id === item.p.id)) picked.push(item);
+      }
+    }
+    return picked.map((x) => x.p);
+  }, [product]);
 
   const unitPrice = Math.round(product.price * WEIGHT_MULT[weight]);
   const unitMrp = product.mrp ? Math.round(product.mrp * WEIGHT_MULT[weight]) : undefined;
