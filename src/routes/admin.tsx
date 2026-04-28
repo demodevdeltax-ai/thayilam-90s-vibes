@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { useAuth } from "@/lib/auth";
@@ -17,15 +17,15 @@ export const Route = createFileRoute("/admin")({
 function AdminGuard() {
   const { loading, isAuthenticated, isAdmin } = useAuth();
   const navigate = useNavigate();
-  const path = typeof window !== "undefined" ? window.location.pathname : "";
-  const onLogin = path === "/admin/login";
+  // Use router state so SSR + client agree on the current path.
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const onLogin = pathname === "/admin/login";
 
   useEffect(() => {
     if (loading || onLogin) return;
     if (!isAuthenticated || !isAdmin) navigate({ to: "/admin/login" });
   }, [loading, isAuthenticated, isAdmin, onLogin, navigate]);
 
-  // Always render the login page without the shell
   if (onLogin) return <Outlet />;
 
   if (loading) {
