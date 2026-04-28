@@ -519,8 +519,6 @@ function ProductDetailPage() {
                 ))}
               </div>
 
-              {/* vendor card */}
-              <VendorCard product={product} />
             </div>
           </div>
         </div>
@@ -636,38 +634,6 @@ function ProductDetailPage() {
   );
 }
 
-function VendorCard({ product }: { product: Product }) {
-  return (
-    <div className="paper-sand ink-border-thin rounded-2xl p-5 mt-7 relative overflow-hidden">
-      <span
-        aria-hidden
-        className="absolute -right-4 -top-4 h-20 w-20 rounded-full border border-dashed border-brown/30"
-      />
-      <div className="flex items-center gap-4">
-        <div className="h-14 w-14 rounded-full ink-border-thin paper grid place-items-center text-rust font-display text-2xl shrink-0">
-          {product.vendor.charAt(0)}
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="text-[10px] uppercase tracking-widest text-brown/55">Made by</div>
-          <div className="font-display text-lg text-brown leading-tight truncate">
-            {product.vendor}
-          </div>
-          <div className="flex items-center gap-2 text-xs text-brown/65 mt-0.5">
-            <LeafIcon size={12} className="text-olive" />
-            T. Nagar, Chennai · ★ 4.8
-          </div>
-        </div>
-      </div>
-      <Link
-        to="/shop"
-        className="mt-4 inline-flex items-center gap-1 text-xs uppercase tracking-widest text-rust hover:underline"
-      >
-        View all from this vendor
-        <ChevronRight size={12} />
-      </Link>
-    </div>
-  );
-}
 
 // (used by related strip arrows on lg+; kept for future use)
 export function _ScrollHint() {
