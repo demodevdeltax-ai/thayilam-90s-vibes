@@ -36,14 +36,16 @@ export function ProductCard({ p }: { p: Product }) {
         <span className="absolute bottom-2 right-2 z-10 text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full ink-border-thin paper text-brown">
           {p.weight}
         </span>
-        <img
-          src={p.img}
-          alt={p.name}
-          loading="lazy"
-          width={512}
-          height={512}
-          className="relative w-full h-full object-contain p-5 line-art group-hover:scale-105 transition-transform duration-500"
-        />
+        {p.img && (
+          <img
+            src={p.img}
+            alt={p.name}
+            loading="lazy"
+            width={512}
+            height={512}
+            className="relative w-full h-full object-contain p-5 line-art group-hover:scale-105 transition-transform duration-500"
+          />
+        )}
       </div>
 
       <h3 className="font-display text-lg md:text-xl text-brown leading-tight">
@@ -68,7 +70,6 @@ export function ProductCard({ p }: { p: Product }) {
               </span>
             )}
           </div>
-          <div className="text-[10px] text-brown/55 mt-1 truncate">by {p.vendor}</div>
         </div>
         <button
           aria-label={`Add ${p.name} to cart`}

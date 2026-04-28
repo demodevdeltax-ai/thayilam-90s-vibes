@@ -3,7 +3,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   CATEGORIES,
   DIETS,
-  VENDORS,
   WEIGHTS,
   type Category,
   type Diet,
@@ -95,19 +94,6 @@ export function FiltersPanel({ value, onChange, onReset }: Props) {
               label={c}
               checked={value.categories.includes(c)}
               onToggle={() => onChange({ ...value, categories: toggle(value.categories, c) })}
-            />
-          ))}
-        </div>
-      </Section>
-
-      <Section title="Vendor">
-        <div className="space-y-0.5 max-h-48 overflow-y-auto pr-1">
-          {VENDORS.map((v) => (
-            <Row
-              key={v}
-              label={v}
-              checked={value.vendors.includes(v)}
-              onToggle={() => onChange({ ...value, vendors: toggle(value.vendors, v) })}
             />
           ))}
         </div>
