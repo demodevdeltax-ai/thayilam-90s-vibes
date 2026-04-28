@@ -82,7 +82,8 @@ export const DIETS: Diet[] = ["Vegan", "Jain", "Contains Dairy"];
 export const SORT_OPTIONS = ["Newest", "Price: Low to High", "Price: High to Low", "Popular"] as const;
 export type SortOption = (typeof SORT_OPTIONS)[number];
 
-type SeedProduct = Omit<Product, "packSizes" | "sku"> & Partial<Pick<Product, "packSizes" | "sku">>;
+type SeedProduct = Omit<Product, "packSizes" | "sku" | "description" | "highlights"> &
+  Partial<Pick<Product, "packSizes" | "sku" | "description" | "highlights">>;
 
 const SEED: SeedProduct[] = [
   { id: "p1", name: "Boondi Ladoo", telugu: "బూంది లడ్డు", category: "Ladoo", vendor: "Lakshmi Akka's Kitchen", weight: "250g", price: 220, mrp: 260, diet: ["Contains Dairy"], popularity: 96, createdAt: "2025-04-12", img: ladoo, badge: "Best seller" },
