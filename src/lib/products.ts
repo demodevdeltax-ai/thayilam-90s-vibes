@@ -108,6 +108,27 @@ const SEED: SeedProduct[] = [
 
 // Auto-assign SKU + packSizes from category defaults if not explicitly provided.
 const skuCounters: Record<string, number> = {};
+// Category-aware default copy used when seed doesn't specify per-product text.
+const CATEGORY_DESC: Record<Category, string> = {
+  Ladoo: "Hand-rolled in small batches with stone-ground flour and slow-cooked syrup. Each ladoo is shaped one at a time — no two are exactly alike. Fragrant with cardamom and finished with a single cashew on top.",
+  Sweets: "Made the traditional South-Indian way in a heavy iron kadai over a low flame. We use A2 cow ghee, jaggery from a single farm in Kolhapur, and absolutely no preservatives. Best enjoyed within 14 days of opening.",
+  Murukku: "Pressed by hand through a brass achu, deep-fried in cold-pressed groundnut oil till the spirals turn a deep amber. Crisp, savoury, and impossible to stop at one — the way paati used to make for evening coffee.",
+  Chakli: "Spiced with roasted cumin, sesame, and a pinch of hing. Each chakli is hand-piped and fried fresh on the morning your order ships. Goes with everything — chai, beer, or just a long Sunday afternoon.",
+  Mixture: "A noisy little box of memories: crisp sev, fried peanuts, curry leaves, fried gram, and a whisper of red chilli. Mixed by hand, packed warm, and sealed in a tin so it stays crunchy till it reaches you.",
+  Pickle: "Sun-cured the Andhra way with raw mango, fenugreek, mustard, and cold-pressed gingelly oil. Matures in clay pots for two weeks before bottling. Eat it with hot rice and ghee, or straight from the spoon — we won't tell.",
+  Pappad: "Hand-rolled paper-thin and sun-dried on cotton sheets for two full days. Roast over an open flame for thirty seconds, or fry till they puff up like little clouds. The taste of every Indian thali, ever.",
+};
+
+const CATEGORY_HIGHLIGHTS: Record<Category, string[]> = {
+  Ladoo:   ["Hand-rolled", "A2 cow ghee", "No preservatives", "Cardamom"],
+  Sweets:  ["Slow-cooked", "Single-farm jaggery", "A2 ghee", "Festival favourite"],
+  Murukku: ["Brass-pressed", "Cold-pressed oil", "Crisp & savoury", "Vegan"],
+  Chakli:  ["Hand-piped", "Roasted spices", "Vegan", "Fried on order day"],
+  Mixture: ["Hand-mixed", "Curry leaf hit", "Sealed-tin fresh", "Vegan"],
+  Pickle:  ["Sun-cured", "Clay-pot matured", "Gingelly oil", "Two-week brew"],
+  Pappad:  ["Sun-dried 2 days", "Paper-thin", "Roast or fry", "Vegan"],
+};
+
 export const PRODUCTS: Product[] = SEED.map((p) => {
   const prefix = SKU_PREFIX[p.category];
   skuCounters[prefix] = (skuCounters[prefix] ?? 0) + 1;
@@ -116,8 +137,17 @@ export const PRODUCTS: Product[] = SEED.map((p) => {
     ...p,
     packSizes: p.packSizes ?? CATEGORY_PACKS[p.category],
     sku: p.sku ?? `THY-${prefix}-${seq}`,
+    description: p.description ?? CATEGORY_DESC[p.category],
+    highlights: p.highlights ?? CATEGORY_HIGHLIGHTS[p.category],
   };
 });
+
+export function defaultDescriptionFor(category: Category): string {
+  return CATEGORY_DESC[category];
+}
+export function defaultHighlightsFor(category: Category): string[] {
+  return [...CATEGORY_HIGHLIGHTS[category]];
+}
 
 export function nextSkuFor(category: Category): string {
   const prefix = SKU_PREFIX[category];
