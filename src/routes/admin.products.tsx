@@ -20,17 +20,19 @@ export const Route = createFileRoute("/admin/products")({
 });
 
 function ProductsPage() {
+  const products = useAllProducts();
   const approvals = useApprovals();
   const featured = useFeatured();
   const flagged = useFlagged();
   const [q, setQ] = useState("");
   const [cat, setCat] = useState<string>("All");
   const [filter, setFilter] = useState<"All" | "Pending" | "Approved" | "Rejected" | "Flagged" | "Featured">("All");
+  const [editing, setEditing] = useState<Product | null>(null);
 
   const filtered = useMemo(() => {
-    return PRODUCTS.filter((p) => {
+    return products.filter((p) => {
       if (cat !== "All" && p.category !== cat) return false;
-      if (q && !p.name.toLowerCase().includes(q.toLowerCase()) && !p.vendor.toLowerCase().includes(q.toLowerCase())) return false;
+      if (q && !p.name.toLowerCase().includes(q.toLowerCase()) && !p.vendor.toLowerCase().includes(q.toLowerCase()) && !p.sku.toLowerCase().includes(q.toLowerCase())) return false;
       const a = approvals[p.id] ?? "Approved";
       if (filter === "Pending" && a !== "Pending") return false;
       if (filter === "Approved" && a !== "Approved") return false;
@@ -39,7 +41,7 @@ function ProductsPage() {
       if (filter === "Featured" && !featured.has(p.id)) return false;
       return true;
     });
-  }, [q, cat, filter, approvals, featured, flagged]);
+  }, [products, q, cat, filter, approvals, featured, flagged]);
 
   return (
     <>
