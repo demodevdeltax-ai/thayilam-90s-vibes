@@ -154,9 +154,9 @@ function ProductsPage() {
                       <button
                         onClick={() => setEditing(p)}
                         className="h-7 px-2 inline-flex items-center gap-1 rounded-md border border-slate-200 hover:bg-[#6B7C4A]/10 hover:border-[#6B7C4A]/40 text-slate-700 text-xs font-medium"
-                        title="Edit pack sizes & SKU"
+                        title="Edit description, highlights, packs & SKU"
                       >
-                        <Package2 size={12} /> Packs
+                        <Pencil size={12} /> Edit
                       </button>
                       <button
                         onClick={() => toggleFeatured(p.id)}
