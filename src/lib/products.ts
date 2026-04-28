@@ -37,6 +37,9 @@ export type Product = {
   // internal SKU code. Customers never see either.
   packSizes: number[];
   sku: string;
+  // Customer-facing rich content, edited from admin.
+  description: string;
+  highlights: string[]; // short tag-style highlights, e.g. "Slow-roasted", "A2 ghee"
 };
 
 // Defaults applied to seed data based on category. Admin can edit per-product.
