@@ -79,9 +79,11 @@ export const DIETS: Diet[] = ["Vegan", "Jain", "Contains Dairy"];
 export const SORT_OPTIONS = ["Newest", "Price: Low to High", "Price: High to Low", "Popular"] as const;
 export type SortOption = (typeof SORT_OPTIONS)[number];
 
-export const PRODUCTS: Product[] = [
+type SeedProduct = Omit<Product, "packSizes" | "sku"> & Partial<Pick<Product, "packSizes" | "sku">>;
+
+const SEED: SeedProduct[] = [
   { id: "p1", name: "Boondi Ladoo", telugu: "బూంది లడ్డు", category: "Ladoo", vendor: "Lakshmi Akka's Kitchen", weight: "250g", price: 220, mrp: 260, diet: ["Contains Dairy"], popularity: 96, createdAt: "2025-04-12", img: ladoo, badge: "Best seller" },
-  { id: "p2", name: "Hand-rolled Murukku", telugu: "ముறుக్కు", category: "Murukku", vendor: "Paati's Pantry", weight: "250g", price: 180, diet: ["Vegan", "Jain"], popularity: 88, createdAt: "2025-04-18", img: murukku },
+  { id: "p2", name: "Hand-rolled Murukku", telugu: "ముறుక్కు", category: "Murukku", vendor: "Paati's Pantry", weight: "250g", price: 180, diet: ["Vegan", "Jain"], popularity: 88, createdAt: "2025-04-18", img: murukku },
   { id: "p3", name: "Spiced Chakli", telugu: "చక్లి", category: "Chakli", vendor: "Sundari Mami", weight: "250g", price: 160, diet: ["Vegan"], popularity: 74, createdAt: "2025-03-30", img: chakli },
   { id: "p4", name: "Madras Mixture", telugu: "మిక్చర్", category: "Mixture", vendor: "Komala Stores", weight: "250g", price: 190, mrp: 220, diet: ["Vegan"], popularity: 81, createdAt: "2025-04-20", img: mixture, badge: "New" },
   { id: "p5", name: "Mysore Pak", telugu: "మైసూర్‌ పాక్", category: "Sweets", vendor: "Krishna Sweets", weight: "500g", price: 460, mrp: 520, diet: ["Contains Dairy"], popularity: 92, createdAt: "2025-04-02", img: mysorepak, badge: "Limited" },
@@ -99,6 +101,29 @@ export const PRODUCTS: Product[] = [
   { id: "p17", name: "Garlic Pappad", telugu: "వెల్లుల్లి పప్పడం", category: "Pappad", vendor: "Sundari Mami", weight: "100g", price: 60, diet: ["Vegan"], popularity: 45, createdAt: "2025-01-25", img: pappad },
   { id: "p18", name: "Spicy Murukku", telugu: "కారం ముறుక్కు", category: "Murukku", vendor: "Komala Stores", weight: "500g", price: 340, diet: ["Vegan"], popularity: 68, createdAt: "2025-03-28", img: murukku },
 ];
+
+// Auto-assign SKU + packSizes from category defaults if not explicitly provided.
+const skuCounters: Record<string, number> = {};
+export const PRODUCTS: Product[] = SEED.map((p) => {
+  const prefix = SKU_PREFIX[p.category];
+  skuCounters[prefix] = (skuCounters[prefix] ?? 0) + 1;
+  const seq = String(skuCounters[prefix]).padStart(3, "0");
+  return {
+    ...p,
+    packSizes: p.packSizes ?? CATEGORY_PACKS[p.category],
+    sku: p.sku ?? `THY-${prefix}-${seq}`,
+  };
+});
+
+export function nextSkuFor(category: Category): string {
+  const prefix = SKU_PREFIX[category];
+  const used = PRODUCTS.filter((p) => p.sku.startsWith(`THY-${prefix}-`)).length;
+  return `THY-${prefix}-${String(used + 1).padStart(3, "0")}`;
+}
+
+export function defaultPacksFor(category: Category): number[] {
+  return [...CATEGORY_PACKS[category]];
+}
 
 export function rupee(n: number) {
   return "₹" + n.toLocaleString("en-IN");
