@@ -14,16 +14,409 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      banners: {
+        Row: {
+          active_from: string | null
+          active_until: string | null
+          created_at: string
+          id: string
+          image_url: string
+          is_active: boolean
+          link_url: string | null
+          sort_order: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          active_from?: string | null
+          active_until?: string | null
+          created_at?: string
+          id?: string
+          image_url: string
+          is_active?: boolean
+          link_url?: string | null
+          sort_order?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          active_from?: string | null
+          active_until?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string
+          is_active?: boolean
+          link_url?: string | null
+          sort_order?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      categories: {
+        Row: {
+          created_at: string
+          icon_url: string | null
+          id: string
+          is_visible: boolean
+          name: string
+          name_telugu: string | null
+          parent_id: string | null
+          slug: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          icon_url?: string | null
+          id?: string
+          is_visible?: boolean
+          name: string
+          name_telugu?: string | null
+          parent_id?: string | null
+          slug: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          icon_url?: string | null
+          id?: string
+          is_visible?: boolean
+          name?: string
+          name_telugu?: string | null
+          parent_id?: string | null
+          slug?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coupons: {
+        Row: {
+          code: string
+          created_at: string
+          discount_type: Database["public"]["Enums"]["coupon_type"]
+          discount_value: number
+          id: string
+          is_active: boolean
+          max_discount: number | null
+          min_order_value: number
+          scope: string
+          scope_ref: string | null
+          updated_at: string
+          usage_count: number
+          usage_limit: number | null
+          valid_from: string
+          valid_until: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          discount_type: Database["public"]["Enums"]["coupon_type"]
+          discount_value: number
+          id?: string
+          is_active?: boolean
+          max_discount?: number | null
+          min_order_value?: number
+          scope?: string
+          scope_ref?: string | null
+          updated_at?: string
+          usage_count?: number
+          usage_limit?: number | null
+          valid_from?: string
+          valid_until?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          discount_type?: Database["public"]["Enums"]["coupon_type"]
+          discount_value?: number
+          id?: string
+          is_active?: boolean
+          max_discount?: number | null
+          min_order_value?: number
+          scope?: string
+          scope_ref?: string | null
+          updated_at?: string
+          usage_count?: number
+          usage_limit?: number | null
+          valid_from?: string
+          valid_until?: string | null
+        }
+        Relationships: []
+      }
+      order_items: {
+        Row: {
+          created_at: string
+          id: string
+          order_id: string
+          pack_breakdown: Json | null
+          product_id: string | null
+          product_name: string
+          product_sku: string | null
+          qty: number
+          unit_price: number
+          weight: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          order_id: string
+          pack_breakdown?: Json | null
+          product_id?: string | null
+          product_name: string
+          product_sku?: string | null
+          qty: number
+          unit_price: number
+          weight: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          order_id?: string
+          pack_breakdown?: Json | null
+          product_id?: string | null
+          product_name?: string
+          product_sku?: string | null
+          qty?: number
+          unit_price?: number
+          weight?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          coupon_code: string | null
+          courier: string | null
+          discount: number
+          id: string
+          order_number: string
+          payment_method: Database["public"]["Enums"]["payment_method"]
+          placed_at: string
+          ship_city: string
+          ship_line: string
+          ship_name: string
+          ship_phone: string
+          ship_pincode: string
+          ship_state: string
+          shipping: number
+          status: Database["public"]["Enums"]["order_status"]
+          subtotal: number
+          total: number
+          tracking: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          coupon_code?: string | null
+          courier?: string | null
+          discount?: number
+          id?: string
+          order_number?: string
+          payment_method?: Database["public"]["Enums"]["payment_method"]
+          placed_at?: string
+          ship_city: string
+          ship_line: string
+          ship_name: string
+          ship_phone: string
+          ship_pincode: string
+          ship_state: string
+          shipping?: number
+          status?: Database["public"]["Enums"]["order_status"]
+          subtotal: number
+          total: number
+          tracking?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          coupon_code?: string | null
+          courier?: string | null
+          discount?: number
+          id?: string
+          order_number?: string
+          payment_method?: Database["public"]["Enums"]["payment_method"]
+          placed_at?: string
+          ship_city?: string
+          ship_line?: string
+          ship_name?: string
+          ship_phone?: string
+          ship_pincode?: string
+          ship_state?: string
+          shipping?: number
+          status?: Database["public"]["Enums"]["order_status"]
+          subtotal?: number
+          total?: number
+          tracking?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      products: {
+        Row: {
+          badge: string | null
+          category_id: string | null
+          category_name: string | null
+          created_at: string
+          default_weight: string
+          description: string
+          diet: string[]
+          highlights: string[]
+          id: string
+          image_url: string | null
+          is_active: boolean
+          mrp: number | null
+          name: string
+          name_telugu: string | null
+          pack_sizes: number[]
+          popularity: number
+          price: number
+          sku: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          badge?: string | null
+          category_id?: string | null
+          category_name?: string | null
+          created_at?: string
+          default_weight?: string
+          description?: string
+          diet?: string[]
+          highlights?: string[]
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          mrp?: number | null
+          name: string
+          name_telugu?: string | null
+          pack_sizes?: number[]
+          popularity?: number
+          price: number
+          sku: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          badge?: string | null
+          category_id?: string | null
+          category_name?: string | null
+          created_at?: string
+          default_weight?: string
+          description?: string
+          diet?: string[]
+          highlights?: string[]
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          mrp?: number | null
+          name?: string
+          name_telugu?: string | null
+          pack_sizes?: number[]
+          popularity?: number
+          price?: number
+          sku?: string
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          full_name: string | null
+          id: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          full_name?: string | null
+          id: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "customer"
+      coupon_type: "flat" | "percent"
+      order_status: "Pending" | "Packed" | "Shipped" | "Delivered" | "Cancelled"
+      payment_method: "UPI" | "Card" | "NetBanking" | "COD"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +543,11 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "customer"],
+      coupon_type: ["flat", "percent"],
+      order_status: ["Pending", "Packed", "Shipped", "Delivered", "Cancelled"],
+      payment_method: ["UPI", "Card", "NetBanking", "COD"],
+    },
   },
 } as const
