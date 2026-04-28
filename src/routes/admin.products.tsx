@@ -1,14 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Search, CheckCircle2, X, Star, Flag, Trash2, Pencil, Download, Upload } from "lucide-react";
+import { Search, CheckCircle2, X, Star, Flag, Trash2, Pencil, Download, Upload, Package2 } from "lucide-react";
 import {
   AdminPageHeader, AdminCard, AdminBadge, TableShell, Th, Td, rupee,
 } from "@/components/admin/ui";
-import { PRODUCTS, CATEGORIES } from "@/lib/products";
+import { CATEGORIES } from "@/lib/products";
 import {
   useApprovals, useFeatured, useFlagged,
   setApproval, toggleFeatured, toggleFlag,
 } from "@/lib/admin-store";
+import { useAllProducts } from "@/lib/products-store";
+import { PackSizesPill, SkuPill } from "@/components/admin/pack-breakdown";
+import { PackSizeEditor } from "@/components/admin/pack-size-editor";
+import type { Product } from "@/lib/products";
 
 export const Route = createFileRoute("/admin/products")({
   head: () => ({ meta: [{ title: "Products — Super Admin" }] }),
@@ -16,17 +20,19 @@ export const Route = createFileRoute("/admin/products")({
 });
 
 function ProductsPage() {
+  const products = useAllProducts();
   const approvals = useApprovals();
   const featured = useFeatured();
   const flagged = useFlagged();
   const [q, setQ] = useState("");
   const [cat, setCat] = useState<string>("All");
   const [filter, setFilter] = useState<"All" | "Pending" | "Approved" | "Rejected" | "Flagged" | "Featured">("All");
+  const [editing, setEditing] = useState<Product | null>(null);
 
   const filtered = useMemo(() => {
-    return PRODUCTS.filter((p) => {
+    return products.filter((p) => {
       if (cat !== "All" && p.category !== cat) return false;
-      if (q && !p.name.toLowerCase().includes(q.toLowerCase()) && !p.vendor.toLowerCase().includes(q.toLowerCase())) return false;
+      if (q && !p.name.toLowerCase().includes(q.toLowerCase()) && !p.vendor.toLowerCase().includes(q.toLowerCase()) && !p.sku.toLowerCase().includes(q.toLowerCase())) return false;
       const a = approvals[p.id] ?? "Approved";
       if (filter === "Pending" && a !== "Pending") return false;
       if (filter === "Approved" && a !== "Approved") return false;
@@ -35,7 +41,7 @@ function ProductsPage() {
       if (filter === "Featured" && !featured.has(p.id)) return false;
       return true;
     });
-  }, [q, cat, filter, approvals, featured, flagged]);
+  }, [products, q, cat, filter, approvals, featured, flagged]);
 
   return (
     <>
@@ -92,8 +98,9 @@ function ProductsPage() {
           <thead>
             <tr>
               <Th>Product</Th>
+              <Th>SKU</Th>
               <Th>Vendor</Th>
-              <Th>Category</Th>
+              <Th>Pack sizes</Th>
               <Th className="text-right">Price</Th>
               <Th>Status</Th>
               <Th className="text-right">Actions</Th>
@@ -115,12 +122,13 @@ function ProductsPage() {
                           {isFeat && <span className="text-[10px] font-semibold uppercase bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded">Featured</span>}
                           {isFlag && <span className="text-[10px] font-semibold uppercase bg-rose-50 text-rose-700 px-1.5 py-0.5 rounded">Flagged</span>}
                         </div>
-                        <div className="text-[11px] text-slate-500">{p.weight}</div>
+                        <div className="text-[11px] text-slate-500">{p.category} · default {p.weight}</div>
                       </div>
                     </div>
                   </Td>
+                  <Td><SkuPill sku={p.sku} /></Td>
                   <Td className="text-slate-600">{p.vendor}</Td>
-                  <Td className="text-slate-600">{p.category}</Td>
+                  <Td><PackSizesPill sizes={p.packSizes} /></Td>
                   <Td className="text-right tabular-nums font-medium">{rupee(p.price)}</Td>
                   <Td><AdminBadge status={a} /></Td>
                   <Td className="text-right">
@@ -144,6 +152,13 @@ function ProductsPage() {
                         </>
                       )}
                       <button
+                        onClick={() => setEditing(p)}
+                        className="h-7 px-2 inline-flex items-center gap-1 rounded-md border border-slate-200 hover:bg-[#6B7C4A]/10 hover:border-[#6B7C4A]/40 text-slate-700 text-xs font-medium"
+                        title="Edit pack sizes & SKU"
+                      >
+                        <Package2 size={12} /> Packs
+                      </button>
+                      <button
                         onClick={() => toggleFeatured(p.id)}
                         className={`h-7 w-7 grid place-items-center rounded-md hover:bg-amber-50 ${isFeat ? "text-amber-600" : "text-slate-400"}`}
                         title={isFeat ? "Unfeature" : "Feature on homepage"}
@@ -158,6 +173,7 @@ function ProductsPage() {
                         <Flag size={14} fill={isFlag ? "currentColor" : "none"} />
                       </button>
                       <button
+                        onClick={() => setEditing(p)}
                         className="h-7 w-7 grid place-items-center rounded-md hover:bg-slate-100 text-slate-500"
                         title="Edit"
                       >
@@ -180,6 +196,12 @@ function ProductsPage() {
           </tbody>
         </TableShell>
       </AdminCard>
+
+      <PackSizeEditor
+        product={editing}
+        open={editing !== null}
+        onClose={() => setEditing(null)}
+      />
     </>
   );
 }
