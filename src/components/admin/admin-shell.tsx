@@ -139,7 +139,6 @@ function SidebarInner({
         <ul className="space-y-0.5">
           {NAV.map(({ to, label, Icon, exact }) => {
             const active = exact ? currentPath === to : currentPath === to || currentPath.startsWith(to + "/");
-            const showBadge = to === "/admin/vendors" && pending > 0;
             return (
               <li key={to}>
                 <Link
@@ -153,11 +152,6 @@ function SidebarInner({
                 >
                   <Icon size={15} strokeWidth={1.8} className={active ? "text-white" : "text-slate-500 group-hover:text-slate-900"} />
                   <span className="flex-1">{label}</span>
-                  {showBadge && (
-                    <span className="h-5 min-w-5 px-1 rounded-full bg-[#C4541A] text-white text-[10px] font-semibold grid place-items-center">
-                      {pending}
-                    </span>
-                  )}
                 </Link>
               </li>
             );
