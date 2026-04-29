@@ -1,4 +1,4 @@
-import { Outlet, useNavigate, useRouterState } from "@/lib/router-compat";
+import { Outlet, useNavigate, useLocation } from "@/lib/router-compat";
 import { Helmet } from "react-helmet-async";
 import { useEffect } from "react";
 import { AdminShell } from "@/components/admin/admin-shell";
@@ -21,8 +21,7 @@ export default AdminGuard;
 function AdminGuard() {
   const { loading, isAuthenticated, isAdmin } = useAuth();
   const navigate = useNavigate();
-  // Use router state so SSR + client agree on the current path.
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const pathname = useLocation().pathname;
   const onLogin = pathname === "/admin/login";
 
   useEffect(() => {

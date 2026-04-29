@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "@/lib/router-compat";
+import { Link, useNavigate, useSearch } from "@/lib/router-compat";
 import { Helmet } from "react-helmet-async";
 import { useEffect } from "react";
 import { SiteHeader } from "@/components/site-header";
@@ -23,7 +23,9 @@ export default AuthPage;
 
 
 function AuthPage() {
-  const { redirect, mode } = Route.useSearch();
+  const sp = useSearch<{ redirect?: string; mode?: string }>();
+  const redirect = sp.redirect || "/";
+  const mode: "login" | "signup" = sp.mode === "signup" ? "signup" : "login";
   const navigate = useNavigate();
   const { isAuthenticated, isAdmin, loading } = useAuth();
 
