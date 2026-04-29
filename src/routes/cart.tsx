@@ -42,13 +42,14 @@ function CartPage() {
   }, [loading, isAuthenticated, navigate]);
 
   const detailed = useMemo(() => {
-    return items
-      .map((it) => {
-        const p = getProduct(it.productId);
-        if (!p) return null;
-        return { ...it, name: p.name, telugu: p.telugu, img: p.img, mrp: p.mrp };
-      })
-      .filter((x): x is CartItem & { name: string; telugu: string; img: string; mrp?: number } => x !== null);
+    type Row = CartItem & { name: string; telugu: string; img: string; mrp: number | null };
+    const rows: Row[] = [];
+    for (const it of items) {
+      const p = getProduct(it.productId);
+      if (!p) continue;
+      rows.push({ ...it, name: p.name, telugu: p.telugu, img: p.img, mrp: p.mrp ?? null });
+    }
+    return rows;
   }, [items, getProduct]);
 
   const delivery = subtotal === 0 ? 0 : subtotal >= 999 || applied?.code === "FREESHIP" ? 0 : 49;
