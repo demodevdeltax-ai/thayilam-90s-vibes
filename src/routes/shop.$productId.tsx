@@ -67,13 +67,12 @@ function Stars({ value, size = 14 }: { value: number; size?: number }) {
 
 function ProductDetailPage() {
   const { productId } = useParams<{ productId: string }>();
-  const PRODUCTS = useAllProducts();
   const [loaded, setLoaded] = useState<boolean>(() => !!getCachedProduct(productId));
   useEffect(() => {
     if (!loaded) {
       loadProducts().then(() => setLoaded(true));
     }
-  }, [loaded]);
+  }, [loaded, productId]);
   const product = getCachedProduct(productId);
   if (!product) {
     return (
@@ -94,6 +93,11 @@ function ProductDetailPage() {
       </div>
     );
   }
+  return <ProductDetailInner product={product} productId={productId} />;
+}
+
+function ProductDetailInner({ product, productId }: { product: ReturnType<typeof getCachedProduct> & {}; productId: string }) {
+  const PRODUCTS = useAllProducts();
 
   const [zoomXY, setZoomXY] = useState<{ x: number; y: number } | null>(null);
   const [activeImg, setActiveImg] = useState(0);
