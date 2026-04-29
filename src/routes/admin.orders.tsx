@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { Helmet } from "react-helmet-async";
 import { useMemo, useState } from "react";
 import { Search, RotateCcw, ChevronDown, ChevronRight } from "lucide-react";
 import {
@@ -9,10 +9,17 @@ import { PRODUCTS } from "@/lib/products";
 import { setOrderStatus } from "@/lib/vendor-store";
 import { OrderItemBreakdown, SkuPill } from "@/components/admin/pack-breakdown";
 
-export const Route = createFileRoute("/admin/orders")({
-  head: () => ({ meta: [{ title: "Orders — Super Admin" }] }),
-  component: OrdersPage,
-});
+
+function RouteHead() {
+  return (
+    <Helmet>
+      <title>{"Orders — Super Admin"}</title>
+    </Helmet>
+  );
+}
+
+export default OrdersPage;
+
 
 const STATUSES: OrderStatus[] = ["Pending", "Packed", "Shipped", "Delivered", "Cancelled"];
 const PAYMENTS = ["UPI", "Card", "Net Banking", "COD"] as const;
@@ -33,6 +40,8 @@ function OrdersPage() {
 
   return (
     <>
+      <RouteHead />
+      <>
       <AdminPageHeader
         title="Orders"
         subtitle="Every order across the store — filter, override, refund."
@@ -173,6 +182,7 @@ function OrdersPage() {
           </tbody>
         </TableShell>
       </AdminCard>
+    </>
     </>
   );
 }

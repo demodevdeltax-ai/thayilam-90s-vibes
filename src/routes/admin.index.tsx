@@ -1,4 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { Link } from "@/lib/router-compat";
+import { Helmet } from "react-helmet-async";
 import {
   Package, ShoppingCart, TrendingUp, AlertTriangle,
   ArrowRight, Flag, CreditCard,
@@ -16,10 +17,17 @@ import {
 import { useApprovals } from "@/lib/admin-store";
 import { PRODUCTS } from "@/lib/products";
 
-export const Route = createFileRoute("/admin/")({
-  head: () => ({ meta: [{ title: "Dashboard — Super Admin" }] }),
-  component: DashboardPage,
-});
+
+function RouteHead() {
+  return (
+    <Helmet>
+      <title>{"Dashboard — Super Admin"}</title>
+    </Helmet>
+  );
+}
+
+export default DashboardPage;
+
 
 function DashboardPage() {
   const approvals = useApprovals();
@@ -37,6 +45,8 @@ function DashboardPage() {
 
   return (
     <>
+      <RouteHead />
+      <>
       <AdminPageHeader
         title="Platform overview"
         subtitle="Live snapshot of products and orders across Thayilam."
@@ -162,6 +172,7 @@ function DashboardPage() {
           </div>
         </AdminCard>
       </div>
+    </>
     </>
   );
 }

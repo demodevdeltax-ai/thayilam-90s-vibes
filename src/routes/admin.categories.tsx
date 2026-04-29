@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { Helmet } from "react-helmet-async";
 import { useState } from "react";
 import { Plus, Pencil, Trash2, GripVertical } from "lucide-react";
 import { AdminPageHeader, AdminCard, AdminBadge } from "@/components/admin/ui";
@@ -17,10 +17,17 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 
-export const Route = createFileRoute("/admin/categories")({
-  head: () => ({ meta: [{ title: "Categories — Super Admin" }] }),
-  component: CategoriesPage,
-});
+
+function RouteHead() {
+  return (
+    <Helmet>
+      <title>{"Categories — Super Admin"}</title>
+    </Helmet>
+  );
+}
+
+export default CategoriesPage;
+
 
 function CategoriesPage() {
   const cats = useAdminCategories();
@@ -42,6 +49,8 @@ function CategoriesPage() {
 
   return (
     <>
+      <RouteHead />
+      <>
       <AdminPageHeader
         title="Categories"
         subtitle="The taxonomy customers shop by. Drag to reorder, nest as subcategories, toggle visibility."
@@ -127,6 +136,7 @@ function CategoriesPage() {
         editing={editing}
         allCategories={cats}
       />
+    </>
     </>
   );
 }

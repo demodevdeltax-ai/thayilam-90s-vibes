@@ -1,13 +1,20 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { Helmet } from "react-helmet-async";
 import { useState } from "react";
 import { Save, Shield, KeyRound, Mail } from "lucide-react";
 import { AdminPageHeader, AdminCard } from "@/components/admin/ui";
 import { Switch } from "@/components/ui/switch";
 
-export const Route = createFileRoute("/admin/settings")({
-  head: () => ({ meta: [{ title: "Settings — Super Admin" }] }),
-  component: SettingsPage,
-});
+
+function RouteHead() {
+  return (
+    <Helmet>
+      <title>{"Settings — Super Admin"}</title>
+    </Helmet>
+  );
+}
+
+export default SettingsPage;
+
 
 function SettingsPage() {
   const [form, setForm] = useState({
@@ -23,6 +30,8 @@ function SettingsPage() {
 
   return (
     <>
+      <RouteHead />
+      <>
       <AdminPageHeader
         title="Platform settings"
         subtitle="The knobs that govern how Thayilam runs end to end."
@@ -118,6 +127,7 @@ function SettingsPage() {
         }
         .ainp:focus { border-color: #475569; box-shadow: 0 0 0 3px rgba(71,85,105,0.12); }
       `}</style>
+    </>
     </>
   );
 }

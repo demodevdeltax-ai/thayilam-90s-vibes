@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { Helmet } from "react-helmet-async";
 import { useMemo, useState } from "react";
 import { Search, CheckCircle2, X, Star, Flag, Trash2, Pencil, Download, Upload, Package2 } from "lucide-react";
 import {
@@ -14,10 +14,17 @@ import { PackSizesPill, SkuPill } from "@/components/admin/pack-breakdown";
 import { PackSizeEditor } from "@/components/admin/pack-size-editor";
 import type { Product } from "@/lib/products";
 
-export const Route = createFileRoute("/admin/products")({
-  head: () => ({ meta: [{ title: "Products — Super Admin" }] }),
-  component: ProductsPage,
-});
+
+function RouteHead() {
+  return (
+    <Helmet>
+      <title>{"Products — Super Admin"}</title>
+    </Helmet>
+  );
+}
+
+export default ProductsPage;
+
 
 function ProductsPage() {
   const products = useAllProducts();
@@ -45,6 +52,8 @@ function ProductsPage() {
 
   return (
     <>
+      <RouteHead />
+      <>
       <AdminPageHeader
         title="Products catalog"
         subtitle="Moderate, feature and flag any product across the platform."
@@ -202,6 +211,7 @@ function ProductsPage() {
         open={editing !== null}
         onClose={() => setEditing(null)}
       />
+    </>
     </>
   );
 }

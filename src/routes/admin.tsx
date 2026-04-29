@@ -1,24 +1,27 @@
-import { createFileRoute, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
+import { Outlet, useNavigate, useLocation } from "@/lib/router-compat";
+import { Helmet } from "react-helmet-async";
 import { useEffect } from "react";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { useAuth } from "@/lib/auth";
 
-export const Route = createFileRoute("/admin")({
-  head: () => ({
-    meta: [
-      { title: "Super Admin — Thayilam" },
-      { name: "description", content: "Platform-wide control for products, orders and offers." },
-      { name: "robots", content: "noindex" },
-    ],
-  }),
-  component: AdminGuard,
-});
+
+function RouteHead() {
+  return (
+    <Helmet>
+      <title>{"Super Admin — Thayilam"}</title>
+      <meta name="description" content="Platform-wide control for products, orders and offers." />
+      <meta name="robots" content="noindex" />
+    </Helmet>
+  );
+}
+
+export default AdminGuard;
+
 
 function AdminGuard() {
   const { loading, isAuthenticated, isAdmin } = useAuth();
   const navigate = useNavigate();
-  // Use router state so SSR + client agree on the current path.
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const pathname = useLocation().pathname;
   const onLogin = pathname === "/admin/login";
 
   useEffect(() => {
@@ -30,9 +33,12 @@ function AdminGuard() {
 
   if (loading) {
     return (
+      <>
+      <RouteHead />
       <div className="min-h-screen grid place-items-center bg-slate-50 text-slate-500 text-sm">
         Loading…
       </div>
+    </>
     );
   }
 

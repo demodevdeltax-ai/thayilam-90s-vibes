@@ -1,18 +1,22 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@/lib/router-compat";
+import { Helmet } from "react-helmet-async";
 import { useEffect } from "react";
 import { ShieldCheck } from "lucide-react";
 import { WhatsAppOtpForm } from "@/components/whatsapp-otp-form";
 import { useAuth } from "@/lib/auth";
 
-export const Route = createFileRoute("/admin/login")({
-  head: () => ({
-    meta: [
-      { title: "Admin sign in — Thayilam" },
-      { name: "robots", content: "noindex" },
-    ],
-  }),
-  component: AdminLoginPage,
-});
+
+function RouteHead() {
+  return (
+    <Helmet>
+      <title>{"Admin sign in — Thayilam"}</title>
+      <meta name="robots" content="noindex" />
+    </Helmet>
+  );
+}
+
+export default AdminLoginPage;
+
 
 function AdminLoginPage() {
   const navigate = useNavigate();
@@ -24,7 +28,9 @@ function AdminLoginPage() {
   }, [isAuthenticated, isAdmin, loading, navigate]);
 
   return (
-    <div className="min-h-screen grid place-items-center bg-slate-50 px-5 py-12">
+    <>
+      <RouteHead />
+      <div className="min-h-screen grid place-items-center bg-slate-50 px-5 py-12">
       <div className="w-full max-w-sm">
         <div className="text-center mb-6">
           <div className="mx-auto h-12 w-12 rounded-xl bg-slate-900 grid place-items-center mb-3">
@@ -57,5 +63,6 @@ function AdminLoginPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }

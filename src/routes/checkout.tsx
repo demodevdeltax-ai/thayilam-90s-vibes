@@ -1,4 +1,5 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@/lib/router-compat";
+import { Helmet } from "react-helmet-async";
 import { useEffect, useMemo, useState } from "react";
 import {
   ChevronRight,
@@ -26,18 +27,21 @@ import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 import packedDabba from "@/assets/illustration-packed-dabba.png";
 
-export const Route = createFileRoute("/checkout")({
-  head: () => ({
-    meta: [
-      { title: "Checkout — Thayilam" },
-      { name: "description", content: "Address, payment and confirmation — pack your dabba and we'll do the rest." },
-      { property: "og:title", content: "Checkout — Thayilam" },
-      { property: "og:description", content: "Address, payment and confirmation in three quiet steps." },
-      { name: "robots", content: "noindex, nofollow" },
-    ],
-  }),
-  component: CheckoutPage,
-});
+
+function RouteHead() {
+  return (
+    <Helmet>
+      <title>{"Checkout — Thayilam"}</title>
+      <meta name="description" content="Address, payment and confirmation — pack your dabba and we'll do the rest." />
+      <meta property="og:title" content="Checkout — Thayilam" />
+      <meta property="og:description" content="Address, payment and confirmation in three quiet steps." />
+      <meta name="robots" content="noindex, nofollow" />
+    </Helmet>
+  );
+}
+
+export default CheckoutPage;
+
 
 type Address = {
   id: string;
@@ -161,7 +165,9 @@ function CheckoutPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <>
+      <RouteHead />
+      <div className="min-h-screen flex flex-col">
       <SiteHeader />
       <main className="flex-1 paper">
         <div className="border-b border-brown/20">
@@ -228,6 +234,7 @@ function CheckoutPage() {
       </main>
       <SiteFooter />
     </div>
+    </>
   );
 }
 

@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { Helmet } from "react-helmet-async";
 import { useState } from "react";
 import { Plus, Pencil, Trash2, Eye, ArrowUp, ArrowDown, ImageIcon } from "lucide-react";
 import { AdminPageHeader, AdminCard, AdminBadge } from "@/components/admin/ui";
@@ -15,10 +15,17 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 
-export const Route = createFileRoute("/admin/banners")({
-  head: () => ({ meta: [{ title: "Homepage banners — Super Admin" }] }),
-  component: BannersPage,
-});
+
+function RouteHead() {
+  return (
+    <Helmet>
+      <title>{"Homepage banners — Super Admin"}</title>
+    </Helmet>
+  );
+}
+
+export default BannersPage;
+
 
 function BannersPage() {
   const banners = useBanners();
@@ -47,6 +54,8 @@ function BannersPage() {
 
   return (
     <>
+      <RouteHead />
+      <>
       <AdminPageHeader
         title="Homepage banners"
         subtitle="Promote festivals, vendors and seasonal drops above the fold."
@@ -181,6 +190,7 @@ function BannersPage() {
         onOpenChange={setOpen}
         editing={editing}
       />
+    </>
     </>
   );
 }

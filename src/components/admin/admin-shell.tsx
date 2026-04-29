@@ -1,4 +1,4 @@
-import { Link, Outlet, useLocation } from "@tanstack/react-router";
+import { Link, Outlet, useLocation } from "@/lib/router-compat";
 import { useState } from "react";
 import {
   LayoutDashboard,

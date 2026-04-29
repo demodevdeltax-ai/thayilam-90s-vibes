@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { Helmet } from "react-helmet-async";
 import { useMemo, useState } from "react";
 import { Search, Mail, Phone } from "lucide-react";
 import {
@@ -6,10 +6,17 @@ import {
 } from "@/components/admin/ui";
 import { CUSTOMERS } from "@/lib/admin-data";
 
-export const Route = createFileRoute("/admin/customers")({
-  head: () => ({ meta: [{ title: "Customers — Super Admin" }] }),
-  component: CustomersPage,
-});
+
+function RouteHead() {
+  return (
+    <Helmet>
+      <title>{"Customers — Super Admin"}</title>
+    </Helmet>
+  );
+}
+
+export default CustomersPage;
+
 
 function CustomersPage() {
   const [q, setQ] = useState("");
@@ -30,6 +37,8 @@ function CustomersPage() {
 
   return (
     <>
+      <RouteHead />
+      <>
       <AdminPageHeader
         title="Customers"
         subtitle="Everyone who has tasted Thayilam. Reach out, segment, and care."
@@ -101,6 +110,7 @@ function CustomersPage() {
           </tbody>
         </TableShell>
       </AdminCard>
+    </>
     </>
   );
 }

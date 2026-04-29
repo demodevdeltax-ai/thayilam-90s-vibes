@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { Helmet } from "react-helmet-async";
 import { Download, FileText, BarChart3, TrendingUp, Users, Package } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
@@ -8,10 +8,17 @@ import { AdminPageHeader, AdminCard, rupee, rupeeShort } from "@/components/admi
 import { ORDERS_BY_DAY, topSellingProducts } from "@/lib/admin-data";
 import { PRODUCTS, CATEGORIES } from "@/lib/products";
 
-export const Route = createFileRoute("/admin/reports")({
-  head: () => ({ meta: [{ title: "Reports — Super Admin" }] }),
-  component: ReportsPage,
-});
+
+function RouteHead() {
+  return (
+    <Helmet>
+      <title>{"Reports — Super Admin"}</title>
+    </Helmet>
+  );
+}
+
+export default ReportsPage;
+
 
 const PIE_COLORS = ["#C4541A", "#6B7C4A", "#3D2310", "#A87341", "#8B9A6B", "#D17F4D", "#5B6B3F"];
 
@@ -36,6 +43,8 @@ function ReportsPage() {
 
   return (
     <>
+      <RouteHead />
+      <>
       <AdminPageHeader
         title="Reports"
         subtitle="Analytics, breakdowns and downloadable exports."
@@ -138,6 +147,7 @@ function ReportsPage() {
           </ul>
         </AdminCard>
       </div>
+    </>
     </>
   );
 }

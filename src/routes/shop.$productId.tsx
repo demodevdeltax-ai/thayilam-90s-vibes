@@ -1,5 +1,6 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { Link, useNavigate, useParams } from "@/lib/router-compat";
+import { useEffect, useMemo, useState } from "react";
+import { Helmet } from "react-helmet-async";
 import {
   Star,
   Minus,
@@ -21,74 +22,9 @@ import { LeafIcon, FlowerIcon } from "@/components/icons";
 import { rupee, type Weight } from "@/lib/products";
 import { useAllProducts, loadProducts, getCachedProduct } from "@/lib/products-store";
 import { useCart } from "@/lib/cart";
-import { useNavigate } from "@tanstack/react-router";
 
-export const Route = createFileRoute("/shop/$productId")({
-  component: ProductDetailPage,
-  loader: async ({ params }) => {
-    await loadProducts();
-    const product = getCachedProduct(params.productId);
-    if (!product) throw notFound();
-    return { product };
-  },
-  head: ({ loaderData, params }) => {
-    const p = loaderData?.product;
-    if (!p) return { meta: [{ title: "Product — Thayilam" }] };
-    const url = `https://thayilam-90s-vibes.lovable.app/shop/${params.productId}`;
-    return {
-      meta: [
-        { title: `${p.name} — Thayilam` },
-        {
-          name: "description",
-          content: `${p.name} (${p.telugu}). ${p.weight} pack at ${rupee(p.price)}. Hand-rolled in Chennai, ships within 24 hours.`,
-        },
-        { property: "og:title", content: `${p.name} — Thayilam` },
-        {
-          property: "og:description",
-          content: `Small-batch ${p.category.toLowerCase()}. Made fresh, no preservatives.`,
-        },
-        { property: "og:type", content: "product" },
-        { property: "og:url", content: url },
-        { property: "og:image", content: p.img },
-        { property: "twitter:image", content: p.img },
-      ],
-      links: [{ rel: "canonical", href: url }],
-      scripts: [
-        {
-          type: "application/ld+json",
-          children: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "Product",
-            name: p.name,
-            description: `${p.name} — small-batch ${p.category.toLowerCase()} from Thayilam.`,
-            image: p.img,
-            sku: p.sku,
-            brand: { "@type": "Brand", name: "Thayilam" },
-            category: p.category,
-            offers: {
-              "@type": "Offer",
-              priceCurrency: "INR",
-              price: p.price,
-              availability: "https://schema.org/InStock",
-              url,
-            },
-          }),
-        },
-      ],
-    };
-  },
-  notFoundComponent: () => (
-    <div className="min-h-screen grid place-items-center paper">
-      <div className="text-center">
-        <h1 className="font-display text-4xl text-brown">Snack not found</h1>
-        <p className="text-brown/70 mt-2">That dabba is empty.</p>
-        <div className="mt-6">
-          <Button asChild><Link to="/shop">Back to shop</Link></Button>
-        </div>
-      </div>
-    </div>
-  ),
-});
+export default ProductDetailPage;
+
 
 const WEIGHTS_AVAILABLE = ["100g", "250g", "500g"] as const;
 type WeightChoice = (typeof WEIGHTS_AVAILABLE)[number];
@@ -130,7 +66,37 @@ function Stars({ value, size = 14 }: { value: number; size?: number }) {
 }
 
 function ProductDetailPage() {
-  const { product } = Route.useLoaderData();
+  const { productId } = useParams<{ productId: string }>();
+  const [loaded, setLoaded] = useState<boolean>(() => !!getCachedProduct(productId));
+  useEffect(() => {
+    if (!loaded) {
+      loadProducts().then(() => setLoaded(true));
+    }
+  }, [loaded, productId]);
+  const product = getCachedProduct(productId);
+  if (!product) {
+    return (
+      <div className="min-h-screen grid place-items-center paper">
+        <div className="text-center">
+          <h1 className="font-display text-4xl text-brown">
+            {loaded ? "Snack not found" : "Loading…"}
+          </h1>
+          {loaded && (
+            <>
+              <p className="text-brown/70 mt-2">That dabba is empty.</p>
+              <div className="mt-6">
+                <Button asChild><Link to="/shop">Back to shop</Link></Button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
+  return <ProductDetailInner product={product} productId={productId} />;
+}
+
+function ProductDetailInner({ product, productId }: { product: ReturnType<typeof getCachedProduct> & {}; productId: string }) {
   const PRODUCTS = useAllProducts();
 
   const [zoomXY, setZoomXY] = useState<{ x: number; y: number } | null>(null);
@@ -202,8 +168,21 @@ function ProductDetailPage() {
   const avgRating =
     RATING_BREAKDOWN.reduce((s, r) => s + r.stars * r.count, 0) / totalReviews;
 
+  const productUrl = `https://thayilam-90s-vibes.lovable.app/shop/${productId}`;
   return (
     <div className="min-h-screen flex flex-col">
+      <Helmet>
+        <title>{`${product.name} — Thayilam`}</title>
+        <meta
+          name="description"
+          content={`${product.name} (${product.telugu}). ${product.weight} pack at ${rupee(product.price)}. Hand-rolled in Chennai, ships within 24 hours.`}
+        />
+        <meta property="og:title" content={`${product.name} — Thayilam`} />
+        <meta property="og:type" content="product" />
+        <meta property="og:url" content={productUrl} />
+        <meta property="og:image" content={product.img} />
+        <link rel="canonical" href={productUrl} />
+      </Helmet>
       <SiteHeader />
 
       <main className="flex-1 paper">

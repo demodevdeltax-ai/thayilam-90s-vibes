@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link } from "@/lib/router-compat";
 import { useAllProducts } from "@/lib/products-store";
 import { ProductCard } from "@/components/product-card";
 

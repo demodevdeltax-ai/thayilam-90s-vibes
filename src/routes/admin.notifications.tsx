@@ -1,5 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
+import { Helmet } from "react-helmet-async";
 import { Send, Bell, MessageSquare, Mail, Sparkles } from "lucide-react";
 import { AdminPageHeader, AdminCard } from "@/components/admin/ui";
 import { sendNotification, useSentNotifications } from "@/lib/admin-store";
@@ -16,10 +16,15 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 
-export const Route = createFileRoute("/admin/notifications")({
-  head: () => ({ meta: [{ title: "Notifications — Super Admin" }] }),
-  component: NotificationsPage,
-});
+function RouteHead() {
+  return (
+    <Helmet>
+      <title>Notifications — Super Admin</title>
+    </Helmet>
+  );
+}
+
+export default NotificationsPage;
 
 const CHANNEL_META: Record<NotifChannel, { label: string; Icon: typeof Bell; color: string }> = {
   push:  { label: "Push", Icon: Bell,          color: "text-[#C4541A]" },
@@ -85,6 +90,7 @@ function NotificationsPage() {
 
   return (
     <>
+      <RouteHead />
       <AdminPageHeader
         title="Notifications"
         subtitle="Reach customers across push, SMS and email — by segment or one-to-one."

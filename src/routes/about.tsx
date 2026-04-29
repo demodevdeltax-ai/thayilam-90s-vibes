@@ -1,4 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { Link } from "@/lib/router-compat";
+import { Helmet } from "react-helmet-async";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { WhatsAppFab } from "@/components/whatsapp-fab";
@@ -23,25 +24,20 @@ import {
   MangoIcon,
 } from "@/components/icons";
 
-export const Route = createFileRoute("/about")({
-  head: () => ({
-    meta: [
-      { title: "Our Story — Thayilam | Taste the 90s again" },
-      {
-        name: "description",
-        content:
-          "Thayilam brings back authentic homemade Indian snacks from the 90s — small-batch, hand-rolled, made by home chefs across India.",
-      },
-      { property: "og:title", content: "Our Story — Thayilam" },
-      {
-        property: "og:description",
-        content:
-          "We're a small kitchen of memories — supporting home chefs, no preservatives, packed with nostalgia.",
-      },
-    ],
-  }),
-  component: AboutPage,
-});
+
+function RouteHead() {
+  return (
+    <Helmet>
+      <title>{"Our Story — Thayilam | Taste the 90s again"}</title>
+      <meta name="description" content="Thayilam brings back authentic homemade Indian snacks from the 90s — small-batch, hand-rolled, made by home chefs across India." />
+      <meta property="og:title" content="Our Story — Thayilam" />
+      <meta property="og:description" content="We're a small kitchen of memories — supporting home chefs, no preservatives, packed with nostalgia." />
+    </Helmet>
+  );
+}
+
+export default AboutPage;
+
 
 const NOSTALGIA = [
   { Icon: AntennaIcon, label: "Doordarshan" },
@@ -106,7 +102,9 @@ const VENDORS = [
 
 function AboutPage() {
   return (
-    <div className="min-h-screen flex flex-col">
+    <>
+      <RouteHead />
+      <div className="min-h-screen flex flex-col">
       <SiteHeader />
 
       <main className="flex-1">
@@ -354,5 +352,6 @@ function AboutPage() {
       <SiteFooter />
       <WhatsAppFab />
     </div>
+    </>
   );
 }

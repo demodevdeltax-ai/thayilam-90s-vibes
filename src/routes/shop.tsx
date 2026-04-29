@@ -1,4 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { Link } from "@/lib/router-compat";
+import { Helmet } from "react-helmet-async";
 import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, SlidersHorizontal } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
@@ -20,25 +21,20 @@ import {
 } from "@/lib/products";
 import { useAllProducts } from "@/lib/products-store";
 
-export const Route = createFileRoute("/shop")({
-  component: ShopPage,
-  head: () => ({
-    meta: [
-      { title: "Shop — Thayilam | Murukku, Ladoo, Pickles & 90s snacks" },
-      {
-        name: "description",
-        content:
-          "Browse hand-rolled murukku, ladoos, mixture, pickles and pappad from small Chennai kitchens. Filter by category, vendor, weight, price and dietary needs.",
-      },
-      { property: "og:title", content: "Shop — Thayilam" },
-      {
-        property: "og:description",
-        content:
-          "Small-batch 90s Indian snacks. Filter by category, vendor, weight and dietary needs.",
-      },
-    ],
-  }),
-});
+
+function RouteHead() {
+  return (
+    <Helmet>
+      <title>{"Shop — Thayilam | Murukku, Ladoo, Pickles & 90s snacks"}</title>
+      <meta name="description" content="Browse hand-rolled murukku, ladoos, mixture, pickles and pappad from small Chennai kitchens. Filter by category, vendor, weight, price and dietary needs." />
+      <meta property="og:title" content="Shop — Thayilam" />
+      <meta property="og:description" content="Small-batch 90s Indian snacks. Filter by category, vendor, weight and dietary needs." />
+    </Helmet>
+  );
+}
+
+export default ShopPage;
+
 
 const PAGE_SIZE = 9;
 const DEFAULT_FILTERS: Filters = {
@@ -98,7 +94,9 @@ function ShopPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <>
+      <RouteHead />
+      <div className="min-h-screen flex flex-col">
       <SiteHeader />
 
       <main className="flex-1 paper">
@@ -224,6 +222,7 @@ function ShopPage() {
       <SiteFooter />
       <WhatsAppFab />
     </div>
+    </>
   );
 }
 
