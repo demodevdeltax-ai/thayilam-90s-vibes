@@ -67,7 +67,7 @@ function Stars({ value, size = 14 }: { value: number; size?: number }) {
 
 function ProductDetailPage() {
   const { productId } = useParams<{ productId: string }>();
-  const PRODUCTS_ALL = useAllProducts();
+  const PRODUCTS = useAllProducts();
   const [loaded, setLoaded] = useState<boolean>(() => !!getCachedProduct(productId));
   useEffect(() => {
     if (!loaded) {
