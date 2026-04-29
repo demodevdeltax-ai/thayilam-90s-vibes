@@ -168,8 +168,21 @@ function ProductDetailInner({ product, productId }: { product: ReturnType<typeof
   const avgRating =
     RATING_BREAKDOWN.reduce((s, r) => s + r.stars * r.count, 0) / totalReviews;
 
+  const productUrl = `https://thayilam-90s-vibes.lovable.app/shop/${productId}`;
   return (
     <div className="min-h-screen flex flex-col">
+      <Helmet>
+        <title>{`${product.name} — Thayilam`}</title>
+        <meta
+          name="description"
+          content={`${product.name} (${product.telugu}). ${product.weight} pack at ${rupee(product.price)}. Hand-rolled in Chennai, ships within 24 hours.`}
+        />
+        <meta property="og:title" content={`${product.name} — Thayilam`} />
+        <meta property="og:type" content="product" />
+        <meta property="og:url" content={productUrl} />
+        <meta property="og:image" content={product.img} />
+        <link rel="canonical" href={productUrl} />
+      </Helmet>
       <SiteHeader />
 
       <main className="flex-1 paper">
