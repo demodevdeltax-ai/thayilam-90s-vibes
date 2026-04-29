@@ -33,6 +33,7 @@ export const Route = createFileRoute("/checkout")({
       { name: "description", content: "Address, payment and confirmation — pack your dabba and we'll do the rest." },
       { property: "og:title", content: "Checkout — Thayilam" },
       { property: "og:description", content: "Address, payment and confirmation in three quiet steps." },
+      { name: "robots", content: "noindex, nofollow" },
     ],
   }),
   component: CheckoutPage,
