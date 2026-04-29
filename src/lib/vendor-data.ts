@@ -29,7 +29,16 @@ export type Order = {
 
 const v = ACTIVE_VENDOR;
 const vendorProducts = PRODUCTS.filter((p) => p.vendor === v);
-const pick = (i: number) => vendorProducts[i % vendorProducts.length];
+const FALLBACK_PRODUCT: Product = {
+  id: "placeholder", name: "Placeholder", telugu: "", category: "Murukku",
+  vendor: v, weight: "250g", price: 0, diet: [], popularity: 0,
+  createdAt: new Date(0).toISOString(), img: "", packSizes: [250],
+  sku: "THY-PLC-000", description: "", highlights: [],
+};
+const pick = (i: number): Product =>
+  vendorProducts.length === 0
+    ? FALLBACK_PRODUCT
+    : vendorProducts[i % vendorProducts.length];
 
 function mkItem(p: Product, qty = 1): OrderItem {
   return { productId: p.id, name: p.name, weight: p.weight, qty, unitPrice: p.price };
