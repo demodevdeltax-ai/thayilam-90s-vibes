@@ -89,7 +89,8 @@ type Step = (typeof STEPS)[number];
 
 function CheckoutPage() {
   const navigate = useNavigate();
-  const { items, subtotal, clear } = useCart();
+  const { items, subtotal, clear, getProduct } = useCart();
+  const { isAuthenticated, loading, user } = useAuth();
   const [step, setStep] = useState<Step>("Address");
 
   // address
@@ -101,10 +102,18 @@ function CheckoutPage() {
   const [pay, setPay] = useState<"upi" | "netbanking" | "card" | "cod">("upi");
 
   // order
-  const [orderId] = useState(() => "TH-" + Math.random().toString(36).slice(2, 8).toUpperCase());
+  const [orderId, setOrderId] = useState<string>("");
+  const [placing, setPlacing] = useState(false);
 
   const delivery = subtotal >= 999 || subtotal === 0 ? 0 : 49;
   const total = subtotal + delivery;
+
+  // Require auth
+  useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      navigate({ to: "/auth", search: { redirect: "/checkout", mode: "login" } });
+    }
+  }, [loading, isAuthenticated, navigate]);
 
   // If empty cart and not on confirm, send back to cart
   useEffect(() => {
@@ -114,6 +123,81 @@ function CheckoutPage() {
   }, [items.length, step, navigate]);
 
   const stepIndex = STEPS.indexOf(step);
+
+  async function placeOrder() {
+    if (!user) {
+      toast.error("Please sign in to place an order");
+      return;
+    }
+    const address = addresses.find((a) => a.id === selected);
+    if (!address) {
+      toast.error("Please choose a delivery address");
+      return;
+    }
+    setPlacing(true);
+    try {
+      const payMethodMap: Record<typeof pay, "UPI" | "NetBanking" | "Card" | "COD"> = {
+        upi: "UPI",
+        netbanking: "NetBanking",
+        card: "Card",
+        cod: "COD",
+      };
+      const { data: order, error: orderErr } = await supabase
+        .from("orders")
+        .insert({
+          user_id: user.id,
+          subtotal,
+          discount: 0,
+          shipping: delivery,
+          total,
+          payment_method: payMethodMap[pay],
+          ship_name: address.name,
+          ship_phone: address.phone,
+          ship_line: address.line + (address.landmark ? `, near ${address.landmark}` : ""),
+          ship_city: address.city,
+          ship_state: address.state,
+          ship_pincode: address.pincode,
+        })
+        .select("id, order_number")
+        .single();
+      if (orderErr || !order) throw orderErr ?? new Error("Order failed");
+
+      const lineItems = items
+        .map((it) => {
+          const p = getProduct(it.productId);
+          if (!p) return null;
+          return {
+            order_id: order.id,
+            product_id: it.productId,
+            product_sku: p.sku,
+            product_name: p.name,
+            weight: it.weight,
+            qty: it.qty,
+            unit_price: it.unitPrice,
+          };
+        })
+        .filter(Boolean) as Array<{
+        order_id: string;
+        product_id: string;
+        product_sku: string;
+        product_name: string;
+        weight: string;
+        qty: number;
+        unit_price: number;
+      }>;
+
+      const { error: itemsErr } = await supabase.from("order_items").insert(lineItems);
+      if (itemsErr) throw itemsErr;
+
+      setOrderId(order.order_number);
+      setStep("Confirm");
+    } catch (err) {
+      console.error("[checkout] placeOrder failed", err);
+      toast.error(err instanceof Error ? err.message : "Could not place order");
+    } finally {
+      setPlacing(false);
+    }
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -157,8 +241,9 @@ function CheckoutPage() {
                   pay={pay}
                   setPay={setPay}
                   onBack={() => setStep("Address")}
-                  onNext={() => setStep("Confirm")}
+                  onNext={placeOrder}
                   total={total}
+                  placing={placing}
                 />
               )}
               {step === "Confirm" && (
