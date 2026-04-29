@@ -18,7 +18,10 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/lib/cart";
-import { rupee, PRODUCTS } from "@/lib/products";
+import { rupee } from "@/lib/products";
+import { useAuth } from "@/lib/auth";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import packedDabba from "@/assets/illustration-packed-dabba.png";
 
 export const Route = createFileRoute("/checkout")({
