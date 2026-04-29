@@ -1,11 +1,12 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
 import { Minus, Plus, Trash2, Tag, ChevronRight } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { Button } from "@/components/ui/button";
 import { useCart, type CartItem } from "@/lib/cart";
-import { rupee, PRODUCTS } from "@/lib/products";
+import { rupee } from "@/lib/products";
+import { useAuth } from "@/lib/auth";
 import emptyDabba from "@/assets/illustration-empty-dabba.png";
 
 export const Route = createFileRoute("/cart")({
@@ -27,21 +28,28 @@ const COUPONS: Record<string, { off: number; label: string }> = {
 };
 
 function CartPage() {
-  const { items, subtotal, setQty, remove } = useCart();
+  const { items, subtotal, setQty, remove, getProduct } = useCart();
+  const { isAuthenticated, loading } = useAuth();
+  const navigate = useNavigate();
   const [code, setCode] = useState("");
   const [applied, setApplied] = useState<{ code: string; off: number; flat: number; label: string } | null>(null);
 
-  const grouped = useMemo(() => {
-    const map = new Map<string, { vendor: string; items: Array<CartItem & { name: string; telugu: string; img: string; mrp?: number }> }>();
-    for (const it of items) {
-      const p = PRODUCTS.find((x) => x.id === it.productId);
-      if (!p) continue;
-      const entry = map.get(p.vendor) ?? { vendor: p.vendor, items: [] };
-      entry.items.push({ ...it, name: p.name, telugu: p.telugu, img: p.img, mrp: p.mrp });
-      map.set(p.vendor, entry);
+  // Require auth to view cart
+  useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      navigate({ to: "/auth", search: { redirect: "/cart", mode: "login" } });
     }
-    return Array.from(map.values());
-  }, [items]);
+  }, [loading, isAuthenticated, navigate]);
+
+  const detailed = useMemo(() => {
+    return items
+      .map((it) => {
+        const p = getProduct(it.productId);
+        if (!p) return null;
+        return { ...it, name: p.name, telugu: p.telugu, img: p.img, mrp: p.mrp };
+      })
+      .filter((x): x is CartItem & { name: string; telugu: string; img: string; mrp?: number } => x !== null);
+  }, [items, getProduct]);
 
   const delivery = subtotal === 0 ? 0 : subtotal >= 999 || applied?.code === "FREESHIP" ? 0 : 49;
   const discount = applied
