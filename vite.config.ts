@@ -1,23 +1,27 @@
 // Vite config wrapper from @lovable.dev/vite-tanstack-config.
 //
 // • Default (Lovable preview / Cloudflare publish): the wrapper auto-includes
-//   the Cloudflare plugin. Nothing extra needed.
+//   the Cloudflare plugin and TanStack Start. Nothing extra needed.
 //
 // • Vercel: Vercel sets the `VERCEL` env var during its build. We disable
-//   Cloudflare and add the Nitro Vite plugin, which detects Vercel and emits
-//   Vercel Functions + static client assets in `.vercel/output/`.
+//   the Cloudflare plugin and add the Nitro Vite plugin, which detects the
+//   Vercel environment and emits Vercel Functions + static client assets in
+//   `.vercel/output/` (the Build Output API).
 //
 // Reference: https://vercel.com/docs/frameworks/full-stack/tanstack-start
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+import type { PluginOption } from "vite";
 
 const isVercel = !!process.env.VERCEL;
 
-export default defineConfig(async () => {
-  if (!isVercel) return {};
-  // Lazy import so non-Vercel builds don't pay the cost.
+const extraPlugins: PluginOption[] = [];
+if (isVercel) {
+  // Top-level await is supported by Vite's config loader.
   const { nitro } = await import("nitro/vite");
-  return {
-    cloudflare: false,
-    plugins: [nitro()],
-  };
+  extraPlugins.push(nitro());
+}
+
+export default defineConfig({
+  cloudflare: isVercel ? false : undefined,
+  plugins: extraPlugins,
 });
