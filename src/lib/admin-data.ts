@@ -116,9 +116,10 @@ export type Payout = {
   utr?: string;
 };
 function mkPayout(id: string, vendor: string, cycle: string, gross: number, status: PayoutStatus, paidAt?: string, utr?: string): Payout {
-  const v = ADMIN_VENDORS.find((x) => x.name === vendor)!;
-  const commission = Math.round(gross * v.commissionPct / 100);
-  return { id, vendor, cycle, gross, commissionPct: v.commissionPct, commission, net: gross - commission, status, paidAt, utr };
+  const v = ADMIN_VENDORS.find((x) => x.name === vendor) ?? vendorMeta[vendor];
+  const pct = v?.commissionPct ?? 12;
+  const commission = Math.round(gross * pct / 100);
+  return { id, vendor, cycle, gross, commissionPct: pct, commission, net: gross - commission, status, paidAt, utr };
 }
 export const PAYOUTS: Payout[] = [
   mkPayout("PO-2504-A", "Paati's Pantry", "Apr 1–15, 2025", 32400, "Paid", "2025-04-18", "UTR4582910"),
