@@ -1,5 +1,6 @@
-import { Link } from "@/lib/router-compat";
-import { useMemo, useState } from "react";
+import { Link, useNavigate, useParams } from "@/lib/router-compat";
+import { useEffect, useMemo, useState } from "react";
+import { Helmet } from "react-helmet-async";
 import {
   Star,
   Minus,
@@ -21,8 +22,6 @@ import { LeafIcon, FlowerIcon } from "@/components/icons";
 import { rupee, type Weight } from "@/lib/products";
 import { useAllProducts, loadProducts, getCachedProduct } from "@/lib/products-store";
 import { useCart } from "@/lib/cart";
-import { useNavigate } from "@/lib/router-compat";
-
 
 export default ProductDetailPage;
 
@@ -67,8 +66,34 @@ function Stars({ value, size = 14 }: { value: number; size?: number }) {
 }
 
 function ProductDetailPage() {
-  const { product } = Route.useLoaderData();
-  const PRODUCTS = useAllProducts();
+  const { productId } = useParams<{ productId: string }>();
+  const PRODUCTS_ALL = useAllProducts();
+  const [loaded, setLoaded] = useState<boolean>(() => !!getCachedProduct(productId));
+  useEffect(() => {
+    if (!loaded) {
+      loadProducts().then(() => setLoaded(true));
+    }
+  }, [loaded]);
+  const product = getCachedProduct(productId);
+  if (!product) {
+    return (
+      <div className="min-h-screen grid place-items-center paper">
+        <div className="text-center">
+          <h1 className="font-display text-4xl text-brown">
+            {loaded ? "Snack not found" : "Loading…"}
+          </h1>
+          {loaded && (
+            <>
+              <p className="text-brown/70 mt-2">That dabba is empty.</p>
+              <div className="mt-6">
+                <Button asChild><Link to="/shop">Back to shop</Link></Button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   const [zoomXY, setZoomXY] = useState<{ x: number; y: number } | null>(null);
   const [activeImg, setActiveImg] = useState(0);
