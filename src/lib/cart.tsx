@@ -59,9 +59,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
   );
 
   const add = useCallback<CartCtx["add"]>(async (productId, weight, qty = 1, unitPrice) => {
+    if (!isAuthenticated) {
+      toast.error("Please sign in to add items to your dabba", {
+        action: {
+          label: "Sign in",
+          onClick: () => {
+            window.location.href = `/auth?redirect=${encodeURIComponent(window.location.pathname)}&mode=login`;
+          },
+        },
+      });
+      return;
+    }
     let product = getCachedProduct(productId) ?? products.find((p) => p.id === productId);
     if (!product) {
-      // Make sure products are loaded before bailing.
       await loadProducts();
       product = getCachedProduct(productId);
       if (!product) return;
@@ -76,7 +86,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
       return [...prev, { id, productId, weight: w, qty, unitPrice: price }];
     });
-  }, [products]);
+    toast.success(`Added ${product.name} to your dabba`);
+  }, [products, isAuthenticated]);
 
   const setQty = useCallback<CartCtx["setQty"]>((id, qty) => {
     setItems((prev) =>
