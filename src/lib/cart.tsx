@@ -32,6 +32,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [hydrated, setHydrated] = useState(false);
   // Trigger product loading so add()/getProduct() find data.
   const products = useAllProducts();
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
     try {
