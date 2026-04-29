@@ -3,7 +3,6 @@ import { toast } from "sonner";
 import type { Product, Weight } from "@/lib/products";
 import { getCachedProduct, loadProducts, useAllProducts } from "@/lib/products-store";
 import { useAuth } from "@/lib/auth";
-import { supabase } from "@/integrations/supabase/client";
 
 export type CartItem = {
   id: string; // composite: productId|weight
