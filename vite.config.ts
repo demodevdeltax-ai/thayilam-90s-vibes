@@ -18,10 +18,10 @@ const extraPlugins: PluginOption[] = [];
 if (isVercel) {
   // Top-level await is supported by Vite's config loader.
   const { nitro } = await import("nitro/vite");
-  extraPlugins.push(nitro());
+  extraPlugins.push(...(nitro() as unknown as PluginOption[]));
 }
 
 export default defineConfig({
   cloudflare: isVercel ? false : undefined,
-  plugins: extraPlugins,
+  plugins: extraPlugins as any,
 });
