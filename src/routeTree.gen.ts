@@ -9,7 +9,6 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ShopRouteImport } from './routes/shop'
 import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as CartRouteImport } from './routes/cart'
@@ -19,6 +18,7 @@ import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as ShopProductIdRouteImport } from './routes/shop.$productId'
+import { Route as ApiSitemapDotxmlRouteImport } from './routes/api/sitemap[.]xml'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminReportsRouteImport } from './routes/admin.reports'
 import { Route as AdminProductsRouteImport } from './routes/admin.products'
@@ -30,11 +30,6 @@ import { Route as AdminCouponsRouteImport } from './routes/admin.coupons'
 import { Route as AdminCategoriesRouteImport } from './routes/admin.categories'
 import { Route as AdminBannersRouteImport } from './routes/admin.banners'
 
-const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
-  id: '/sitemap.xml',
-  path: '/sitemap.xml',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ShopRoute = ShopRouteImport.update({
   id: '/shop',
   path: '/shop',
@@ -79,6 +74,11 @@ const ShopProductIdRoute = ShopProductIdRouteImport.update({
   id: '/$productId',
   path: '/$productId',
   getParentRoute: () => ShopRoute,
+} as any)
+const ApiSitemapDotxmlRoute = ApiSitemapDotxmlRouteImport.update({
+  id: '/api/sitemap.xml',
+  path: '/api/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AdminSettingsRoute = AdminSettingsRouteImport.update({
   id: '/settings',
@@ -139,7 +139,6 @@ export interface FileRoutesByFullPath {
   '/cart': typeof CartRoute
   '/checkout': typeof CheckoutRoute
   '/shop': typeof ShopRouteWithChildren
-  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/banners': typeof AdminBannersRoute
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/coupons': typeof AdminCouponsRoute
@@ -150,6 +149,7 @@ export interface FileRoutesByFullPath {
   '/admin/products': typeof AdminProductsRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/settings': typeof AdminSettingsRoute
+  '/api/sitemap.xml': typeof ApiSitemapDotxmlRoute
   '/shop/$productId': typeof ShopProductIdRoute
   '/admin/': typeof AdminIndexRoute
 }
@@ -160,7 +160,6 @@ export interface FileRoutesByTo {
   '/cart': typeof CartRoute
   '/checkout': typeof CheckoutRoute
   '/shop': typeof ShopRouteWithChildren
-  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/banners': typeof AdminBannersRoute
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/coupons': typeof AdminCouponsRoute
@@ -171,6 +170,7 @@ export interface FileRoutesByTo {
   '/admin/products': typeof AdminProductsRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/settings': typeof AdminSettingsRoute
+  '/api/sitemap.xml': typeof ApiSitemapDotxmlRoute
   '/shop/$productId': typeof ShopProductIdRoute
   '/admin': typeof AdminIndexRoute
 }
@@ -183,7 +183,6 @@ export interface FileRoutesById {
   '/cart': typeof CartRoute
   '/checkout': typeof CheckoutRoute
   '/shop': typeof ShopRouteWithChildren
-  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/banners': typeof AdminBannersRoute
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/coupons': typeof AdminCouponsRoute
@@ -194,6 +193,7 @@ export interface FileRoutesById {
   '/admin/products': typeof AdminProductsRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/settings': typeof AdminSettingsRoute
+  '/api/sitemap.xml': typeof ApiSitemapDotxmlRoute
   '/shop/$productId': typeof ShopProductIdRoute
   '/admin/': typeof AdminIndexRoute
 }
@@ -207,7 +207,6 @@ export interface FileRouteTypes {
     | '/cart'
     | '/checkout'
     | '/shop'
-    | '/sitemap.xml'
     | '/admin/banners'
     | '/admin/categories'
     | '/admin/coupons'
@@ -218,6 +217,7 @@ export interface FileRouteTypes {
     | '/admin/products'
     | '/admin/reports'
     | '/admin/settings'
+    | '/api/sitemap.xml'
     | '/shop/$productId'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
@@ -228,7 +228,6 @@ export interface FileRouteTypes {
     | '/cart'
     | '/checkout'
     | '/shop'
-    | '/sitemap.xml'
     | '/admin/banners'
     | '/admin/categories'
     | '/admin/coupons'
@@ -239,6 +238,7 @@ export interface FileRouteTypes {
     | '/admin/products'
     | '/admin/reports'
     | '/admin/settings'
+    | '/api/sitemap.xml'
     | '/shop/$productId'
     | '/admin'
   id:
@@ -250,7 +250,6 @@ export interface FileRouteTypes {
     | '/cart'
     | '/checkout'
     | '/shop'
-    | '/sitemap.xml'
     | '/admin/banners'
     | '/admin/categories'
     | '/admin/coupons'
@@ -261,6 +260,7 @@ export interface FileRouteTypes {
     | '/admin/products'
     | '/admin/reports'
     | '/admin/settings'
+    | '/api/sitemap.xml'
     | '/shop/$productId'
     | '/admin/'
   fileRoutesById: FileRoutesById
@@ -273,18 +273,11 @@ export interface RootRouteChildren {
   CartRoute: typeof CartRoute
   CheckoutRoute: typeof CheckoutRoute
   ShopRoute: typeof ShopRouteWithChildren
-  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  ApiSitemapDotxmlRoute: typeof ApiSitemapDotxmlRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/sitemap.xml': {
-      id: '/sitemap.xml'
-      path: '/sitemap.xml'
-      fullPath: '/sitemap.xml'
-      preLoaderRoute: typeof SitemapDotxmlRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/shop': {
       id: '/shop'
       path: '/shop'
@@ -347,6 +340,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/shop/$productId'
       preLoaderRoute: typeof ShopProductIdRouteImport
       parentRoute: typeof ShopRoute
+    }
+    '/api/sitemap.xml': {
+      id: '/api/sitemap.xml'
+      path: '/api/sitemap.xml'
+      fullPath: '/api/sitemap.xml'
+      preLoaderRoute: typeof ApiSitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/admin/settings': {
       id: '/admin/settings'
@@ -469,7 +469,7 @@ const rootRouteChildren: RootRouteChildren = {
   CartRoute: CartRoute,
   CheckoutRoute: CheckoutRoute,
   ShopRoute: ShopRouteWithChildren,
-  SitemapDotxmlRoute: SitemapDotxmlRoute,
+  ApiSitemapDotxmlRoute: ApiSitemapDotxmlRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
