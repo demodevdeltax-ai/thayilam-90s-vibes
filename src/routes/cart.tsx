@@ -16,6 +16,7 @@ export const Route = createFileRoute("/cart")({
       { name: "description", content: "Review your hand-picked snacks before checkout. Cream-coloured cart, rust-coloured rupees." },
       { property: "og:title", content: "Your Dabba — Thayilam" },
       { property: "og:description", content: "Review your hand-picked Indian snacks before checkout." },
+      { name: "robots", content: "noindex, nofollow" },
     ],
   }),
   component: CartPage,

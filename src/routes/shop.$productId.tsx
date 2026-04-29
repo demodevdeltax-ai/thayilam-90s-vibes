@@ -31,9 +31,10 @@ export const Route = createFileRoute("/shop/$productId")({
     if (!product) throw notFound();
     return { product };
   },
-  head: ({ loaderData }) => {
+  head: ({ loaderData, params }) => {
     const p = loaderData?.product;
     if (!p) return { meta: [{ title: "Product — Thayilam" }] };
+    const url = `https://thayilam-90s-vibes.lovable.app/shop/${params.productId}`;
     return {
       meta: [
         { title: `${p.name} — Thayilam` },
@@ -46,8 +47,33 @@ export const Route = createFileRoute("/shop/$productId")({
           property: "og:description",
           content: `Small-batch ${p.category.toLowerCase()}. Made fresh, no preservatives.`,
         },
+        { property: "og:type", content: "product" },
+        { property: "og:url", content: url },
         { property: "og:image", content: p.img },
         { property: "twitter:image", content: p.img },
+      ],
+      links: [{ rel: "canonical", href: url }],
+      scripts: [
+        {
+          type: "application/ld+json",
+          children: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Product",
+            name: p.name,
+            description: `${p.name} — small-batch ${p.category.toLowerCase()} from Thayilam.`,
+            image: p.img,
+            sku: p.sku,
+            brand: { "@type": "Brand", name: "Thayilam" },
+            category: p.category,
+            offers: {
+              "@type": "Offer",
+              priceCurrency: "INR",
+              price: p.price,
+              availability: "https://schema.org/InStock",
+              url,
+            },
+          }),
+        },
       ],
     };
   },

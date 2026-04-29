@@ -20,7 +20,9 @@ import { Button } from "@/components/ui/button";
 import { useCart } from "@/lib/cart";
 import { rupee } from "@/lib/products";
 import { useAuth } from "@/lib/auth";
-import { supabase } from "@/integrations/supabase/client";
+// NOTE: Order submission is mocked locally so the storefront stays functional
+// while the WhatsApp OTP backend is being wired up. Replace with your real
+// order-creation endpoint when ready.
 import { toast } from "sonner";
 import packedDabba from "@/assets/illustration-packed-dabba.png";
 
@@ -31,6 +33,7 @@ export const Route = createFileRoute("/checkout")({
       { name: "description", content: "Address, payment and confirmation — pack your dabba and we'll do the rest." },
       { property: "og:title", content: "Checkout — Thayilam" },
       { property: "og:description", content: "Address, payment and confirmation in three quiet steps." },
+      { name: "robots", content: "noindex, nofollow" },
     ],
   }),
   component: CheckoutPage,
@@ -136,60 +139,18 @@ function CheckoutPage() {
     }
     setPlacing(true);
     try {
-      const payMethodMap: Record<typeof pay, "UPI" | "NetBanking" | "Card" | "COD"> = {
-        upi: "UPI",
-        netbanking: "NetBanking",
-        card: "Card",
-        cod: "COD",
-      };
-      const { data: order, error: orderErr } = await supabase
-        .from("orders")
-        .insert({
-          user_id: user.id,
-          subtotal,
-          discount: 0,
-          shipping: delivery,
-          total,
-          payment_method: payMethodMap[pay],
-          ship_name: address.name,
-          ship_phone: address.phone,
-          ship_line: address.line + (address.landmark ? `, near ${address.landmark}` : ""),
-          ship_city: address.city,
-          ship_state: address.state,
-          ship_pincode: address.pincode,
-        })
-        .select("id, order_number")
-        .single();
-      if (orderErr || !order) throw orderErr ?? new Error("Order failed");
-
-      const lineItems = items
-        .map((it) => {
-          const p = getProduct(it.productId);
-          if (!p) return null;
-          return {
-            order_id: order.id,
-            product_id: it.productId,
-            product_sku: p.sku,
-            product_name: p.name,
-            weight: it.weight,
-            qty: it.qty,
-            unit_price: it.unitPrice,
-          };
-        })
-        .filter(Boolean) as Array<{
-        order_id: string;
-        product_id: string;
-        product_sku: string;
-        product_name: string;
-        weight: string;
-        qty: number;
-        unit_price: number;
-      }>;
-
-      const { error: itemsErr } = await supabase.from("order_items").insert(lineItems);
-      if (itemsErr) throw itemsErr;
-
-      setOrderId(order.order_number);
+      // Mock order placement — generates a friendly order number locally.
+      // TODO: Replace with your real order API once WABA + backend are wired.
+      await new Promise((r) => setTimeout(r, 600));
+      const orderNumber = `THY-${Date.now().toString().slice(-6)}`;
+      void user; // user info would be sent to your backend
+      void subtotal;
+      void delivery;
+      void total;
+      void address;
+      void pay;
+      void getProduct;
+      setOrderId(orderNumber);
       setStep("Confirm");
     } catch (err) {
       console.error("[checkout] placeOrder failed", err);
