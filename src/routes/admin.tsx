@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useNavigate, useRouterState } from "@/lib/router-compat";
 import { useEffect } from "react";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { useAuth } from "@/lib/auth";

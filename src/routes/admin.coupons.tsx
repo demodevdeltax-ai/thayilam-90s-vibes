@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute } from "@/lib/router-compat";
 import { useState } from "react";
 import { Plus, Pencil, Trash2, Ticket, Copy } from "lucide-react";
 import {

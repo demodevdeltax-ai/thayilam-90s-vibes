@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute } from "@/lib/router-compat";
 import { useMemo, useState } from "react";
 import { Send, Bell, MessageSquare, Mail, Sparkles } from "lucide-react";
 import { AdminPageHeader, AdminCard } from "@/components/admin/ui";

@@ -1,4 +1,4 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound } from "@/lib/router-compat";
 import { useMemo, useState } from "react";
 import {
   Star,
@@ -21,7 +21,7 @@ import { LeafIcon, FlowerIcon } from "@/components/icons";
 import { rupee, type Weight } from "@/lib/products";
 import { useAllProducts, loadProducts, getCachedProduct } from "@/lib/products-store";
 import { useCart } from "@/lib/cart";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate } from "@/lib/router-compat";
 
 export const Route = createFileRoute("/shop/$productId")({
   component: ProductDetailPage,

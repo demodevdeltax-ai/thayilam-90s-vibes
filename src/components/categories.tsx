@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link } from "@/lib/router-compat";
 import { LadooIcon, MurukkuIcon, ChakliIcon, LeafIcon, MangoIcon, FlowerIcon, SparkIcon, RibbonIcon } from "./icons";
 import type { ComponentType, SVGProps } from "react";
 

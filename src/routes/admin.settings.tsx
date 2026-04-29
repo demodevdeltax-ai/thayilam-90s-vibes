@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute } from "@/lib/router-compat";
 import { useState } from "react";
 import { Save, Shield, KeyRound, Mail } from "lucide-react";
 import { AdminPageHeader, AdminCard } from "@/components/admin/ui";

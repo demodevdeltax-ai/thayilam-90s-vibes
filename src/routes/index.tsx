@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute } from "@/lib/router-compat";
 import { SiteHeader } from "@/components/site-header";
 import { Hero } from "@/components/hero";
 import { Categories } from "@/components/categories";
