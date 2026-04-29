@@ -25,6 +25,42 @@ export const Route = createFileRoute("/")({
         content:
           "90s Indian nostalgia snacks, hand-rolled and packed daily. Order on WhatsApp.",
       },
+      { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://thayilam-90s-vibes.lovable.app/" },
+    ],
+    links: [{ rel: "canonical", href: "https://thayilam-90s-vibes.lovable.app/" }],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          name: "Thayilam",
+          url: "https://thayilam-90s-vibes.lovable.app/",
+          description:
+            "Small-batch 90s Indian snacks — murukku, ladoo, chakli, mixture, pickles and sweets made fresh in Chennai.",
+          contactPoint: {
+            "@type": "ContactPoint",
+            telephone: "+91-98404-41994",
+            contactType: "customer service",
+            areaServed: "IN",
+          },
+        }),
+      },
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          name: "Thayilam",
+          url: "https://thayilam-90s-vibes.lovable.app/",
+          potentialAction: {
+            "@type": "SearchAction",
+            target: "https://thayilam-90s-vibes.lovable.app/shop?q={search_term_string}",
+            "query-input": "required name=search_term_string",
+          },
+        }),
+      },
     ],
   }),
 });
