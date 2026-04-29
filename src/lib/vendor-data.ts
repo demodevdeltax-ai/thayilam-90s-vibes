@@ -55,7 +55,7 @@ const iso = (daysAgo: number, h = 10) => {
   return d.toISOString();
 };
 
-export const ORDERS: Order[] = [
+export const ORDERS: Order[] = vendorProducts.length === 0 ? [] : [
   {
     id: "TH-9F3A21",
     customer: { name: "Lakshmi Ramaswamy", phone: "98400 11223" },
