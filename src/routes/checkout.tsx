@@ -766,7 +766,7 @@ function Stat({ label, value, icon }: { label: string; value: string; icon?: Rea
 /* ----------------------------- order summary ---------------------------- */
 
 function OrderSummary({ subtotal, delivery, total }: { subtotal: number; delivery: number; total: number }) {
-  const { items } = useCart();
+  const { items, getProduct } = useCart();
   return (
     <div className="lg:sticky lg:top-24 paper-sand ink-border rounded-2xl p-6">
       <div className="text-[11px] tracking-[0.3em] uppercase text-olive mb-1">— Order summary —</div>
@@ -774,7 +774,7 @@ function OrderSummary({ subtotal, delivery, total }: { subtotal: number; deliver
       <div className="dashed-rule my-4" />
       <ul className="space-y-3 max-h-72 overflow-auto pr-1">
         {items.map((it) => {
-          const p = PRODUCTS.find((x) => x.id === it.productId);
+          const p = getProduct(it.productId);
           if (!p) return null;
           return (
             <li key={it.id} className="flex items-center gap-3">
