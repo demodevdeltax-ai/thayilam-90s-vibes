@@ -572,12 +572,14 @@ function PaymentStep({
   onBack,
   onNext,
   total,
+  placing,
 }: {
   pay: "upi" | "netbanking" | "card" | "cod";
   setPay: (v: "upi" | "netbanking" | "card" | "cod") => void;
   onBack: () => void;
-  onNext: () => void;
+  onNext: () => void | Promise<void>;
   total: number;
+  placing?: boolean;
 }) {
   const [upi, setUpi] = useState("");
   const [card, setCard] = useState({ num: "", name: "", exp: "", cvv: "" });
