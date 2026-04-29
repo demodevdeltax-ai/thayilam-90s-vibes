@@ -219,7 +219,7 @@ function AdminLoginPage() {
 
         <div className="text-center mt-5 text-xs text-slate-500">
           Are you a customer?{" "}
-          <Link to="/auth" className="text-slate-900 font-medium hover:underline">
+          <Link to="/auth" search={{ redirect: "/", mode: "login" }} className="text-slate-900 font-medium hover:underline">
             Customer sign in
           </Link>
         </div>

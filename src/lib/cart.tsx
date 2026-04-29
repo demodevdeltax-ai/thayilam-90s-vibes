@@ -1,6 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { toast } from "sonner";
 import type { Product, Weight } from "@/lib/products";
 import { getCachedProduct, loadProducts, useAllProducts } from "@/lib/products-store";
+import { useAuth } from "@/lib/auth";
 
 export type CartItem = {
   id: string; // composite: productId|weight
@@ -29,6 +31,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [hydrated, setHydrated] = useState(false);
   // Trigger product loading so add()/getProduct() find data.
   const products = useAllProducts();
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
     try {
@@ -55,9 +58,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
   );
 
   const add = useCallback<CartCtx["add"]>(async (productId, weight, qty = 1, unitPrice) => {
+    if (!isAuthenticated) {
+      toast.error("Please sign in to add items to your dabba", {
+        action: {
+          label: "Sign in",
+          onClick: () => {
+            window.location.href = `/auth?redirect=${encodeURIComponent(window.location.pathname)}&mode=login`;
+          },
+        },
+      });
+      return;
+    }
     let product = getCachedProduct(productId) ?? products.find((p) => p.id === productId);
     if (!product) {
-      // Make sure products are loaded before bailing.
       await loadProducts();
       product = getCachedProduct(productId);
       if (!product) return;
@@ -72,7 +85,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
       return [...prev, { id, productId, weight: w, qty, unitPrice: price }];
     });
-  }, [products]);
+    toast.success(`Added ${product.name} to your dabba`);
+  }, [products, isAuthenticated]);
 
   const setQty = useCallback<CartCtx["setQty"]>((id, qty) => {
     setItems((prev) =>

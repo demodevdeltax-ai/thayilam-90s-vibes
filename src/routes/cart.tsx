@@ -1,11 +1,12 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
 import { Minus, Plus, Trash2, Tag, ChevronRight } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { Button } from "@/components/ui/button";
 import { useCart, type CartItem } from "@/lib/cart";
-import { rupee, PRODUCTS } from "@/lib/products";
+import { rupee } from "@/lib/products";
+import { useAuth } from "@/lib/auth";
 import emptyDabba from "@/assets/illustration-empty-dabba.png";
 
 export const Route = createFileRoute("/cart")({
@@ -27,21 +28,29 @@ const COUPONS: Record<string, { off: number; label: string }> = {
 };
 
 function CartPage() {
-  const { items, subtotal, setQty, remove } = useCart();
+  const { items, subtotal, setQty, remove, getProduct } = useCart();
+  const { isAuthenticated, loading } = useAuth();
+  const navigate = useNavigate();
   const [code, setCode] = useState("");
   const [applied, setApplied] = useState<{ code: string; off: number; flat: number; label: string } | null>(null);
 
-  const grouped = useMemo(() => {
-    const map = new Map<string, { vendor: string; items: Array<CartItem & { name: string; telugu: string; img: string; mrp?: number }> }>();
-    for (const it of items) {
-      const p = PRODUCTS.find((x) => x.id === it.productId);
-      if (!p) continue;
-      const entry = map.get(p.vendor) ?? { vendor: p.vendor, items: [] };
-      entry.items.push({ ...it, name: p.name, telugu: p.telugu, img: p.img, mrp: p.mrp });
-      map.set(p.vendor, entry);
+  // Require auth to view cart
+  useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      navigate({ to: "/auth", search: { redirect: "/cart", mode: "login" } });
     }
-    return Array.from(map.values());
-  }, [items]);
+  }, [loading, isAuthenticated, navigate]);
+
+  const detailed = useMemo(() => {
+    type Row = CartItem & { name: string; telugu: string; img: string; mrp: number | null };
+    const rows: Row[] = [];
+    for (const it of items) {
+      const p = getProduct(it.productId);
+      if (!p) continue;
+      rows.push({ ...it, name: p.name, telugu: p.telugu, img: p.img, mrp: p.mrp ?? null });
+    }
+    return rows;
+  }, [items, getProduct]);
 
   const delivery = subtotal === 0 ? 0 : subtotal >= 999 || applied?.code === "FREESHIP" ? 0 : 49;
   const discount = applied
@@ -84,7 +93,7 @@ function CartPage() {
               Tied with thread
             </h1>
             <p className="font-display italic text-brown/70 mt-2">
-              {items.length === 0 ? "Nothing inside yet." : `${items.length} parcel${items.length === 1 ? "" : "s"} from ${grouped.length} vendor${grouped.length === 1 ? "" : "s"}.`}
+              {items.length === 0 ? "Nothing inside yet." : `${items.length} parcel${items.length === 1 ? "" : "s"} packed by hand.`}
             </p>
           </div>
 
@@ -94,91 +103,81 @@ function CartPage() {
             <div className="grid lg:grid-cols-12 gap-8 lg:gap-12">
               {/* ITEMS */}
               <div className="lg:col-span-8 space-y-7">
-                {grouped.map((g) => (
-                  <section key={g.vendor} className="paper-sand ink-border-thin rounded-2xl overflow-hidden">
-                    <header className="flex items-center justify-between px-5 md:px-6 py-3 bg-cream border-b border-brown/20">
-                      <div className="flex items-center gap-3">
-                        <span className="h-8 w-8 rounded-full bg-olive text-cream grid place-items-center font-display font-semibold text-sm">
-                          {g.vendor.slice(0, 1)}
-                        </span>
-                        <div>
-                          <div className="text-[10px] uppercase tracking-widest text-brown/55">Sold by</div>
-                          <div className="font-display text-brown text-base">{g.vendor}</div>
+                <section className="paper-sand ink-border-thin rounded-2xl overflow-hidden">
+                  <header className="flex items-center justify-between px-5 md:px-6 py-3 bg-cream border-b border-brown/20">
+                    <div className="text-[10px] uppercase tracking-widest text-brown/60">Your selection</div>
+                    <span className="text-[10px] uppercase tracking-widest text-olive">Packed together</span>
+                  </header>
+                  <ul className="divide-y divide-brown/15">
+                    {detailed.map((it) => (
+                      <li key={it.id} className="flex gap-4 p-4 md:p-5">
+                        <div className="relative h-24 w-24 md:h-28 md:w-28 shrink-0 rounded-xl overflow-hidden paper grid place-items-center">
+                          <div className="absolute inset-2 rounded-full border border-dashed border-brown/25" />
+                          <img
+                            src={it.img}
+                            alt={it.name}
+                            loading="lazy"
+                            width={224}
+                            height={224}
+                            className="relative w-full h-full object-contain p-3 line-art"
+                          />
                         </div>
-                      </div>
-                      <span className="text-[10px] uppercase tracking-widest text-olive">Packed together</span>
-                    </header>
-                    <ul className="divide-y divide-brown/15">
-                      {g.items.map((it) => (
-                        <li key={it.id} className="flex gap-4 p-4 md:p-5">
-                          <div className="relative h-24 w-24 md:h-28 md:w-28 shrink-0 rounded-xl overflow-hidden paper grid place-items-center">
-                            <div className="absolute inset-2 rounded-full border border-dashed border-brown/25" />
-                            <img
-                              src={it.img}
-                              alt={it.name}
-                              loading="lazy"
-                              width={224}
-                              height={224}
-                              className="relative w-full h-full object-contain p-3 line-art"
-                            />
+                        <div className="flex-1 min-w-0 flex flex-col">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <h3 className="font-display text-lg text-brown truncate">{it.name}</h3>
+                              <div className="text-xs text-brown/55 truncate">{it.telugu}</div>
+                            </div>
+                            <button
+                              onClick={() => remove(it.id)}
+                              aria-label={`Remove ${it.name}`}
+                              className="shrink-0 h-8 w-8 rounded-full text-brown/60 hover:bg-rust hover:text-cream grid place-items-center transition-colors"
+                            >
+                              <Trash2 size={15} strokeWidth={1.6} />
+                            </button>
                           </div>
-                          <div className="flex-1 min-w-0 flex flex-col">
-                            <div className="flex items-start justify-between gap-3">
-                              <div className="min-w-0">
-                                <h3 className="font-display text-lg text-brown truncate">{it.name}</h3>
-                                <div className="text-xs text-brown/55 truncate">{it.telugu}</div>
-                              </div>
+                          <div className="mt-1 flex items-center gap-2 flex-wrap">
+                            <span className="text-[10px] uppercase tracking-widest px-2 py-0.5 rounded-full ink-border-thin text-brown bg-cream">
+                              {it.weight}
+                            </span>
+                            {it.mrp && it.mrp > it.unitPrice && (
+                              <span className="text-[10px] uppercase tracking-widest text-olive font-semibold">
+                                Save {rupee(it.mrp - it.unitPrice)}/pack
+                              </span>
+                            )}
+                          </div>
+                          <div className="mt-auto pt-3 flex items-end justify-between gap-3">
+                            <div className="flex items-center ink-border-thin rounded-full overflow-hidden bg-cream">
                               <button
-                                onClick={() => remove(it.id)}
-                                aria-label={`Remove ${it.name}`}
-                                className="shrink-0 h-8 w-8 rounded-full text-brown/60 hover:bg-rust hover:text-cream grid place-items-center transition-colors"
+                                onClick={() => setQty(it.id, it.qty - 1)}
+                                aria-label="Decrease"
+                                className="h-9 w-9 grid place-items-center text-brown hover:bg-brown hover:text-cream transition-colors"
                               >
-                                <Trash2 size={15} strokeWidth={1.6} />
+                                <Minus size={13} />
+                              </button>
+                              <span className="w-9 text-center font-display text-base text-brown">{it.qty}</span>
+                              <button
+                                onClick={() => setQty(it.id, it.qty + 1)}
+                                aria-label="Increase"
+                                className="h-9 w-9 grid place-items-center text-brown hover:bg-brown hover:text-cream transition-colors"
+                              >
+                                <Plus size={13} />
                               </button>
                             </div>
-                            <div className="mt-1 flex items-center gap-2 flex-wrap">
-                              <span className="text-[10px] uppercase tracking-widest px-2 py-0.5 rounded-full ink-border-thin text-brown bg-cream">
-                                {it.weight}
-                              </span>
-                              {it.mrp && it.mrp > it.unitPrice && (
-                                <span className="text-[10px] uppercase tracking-widest text-olive font-semibold">
-                                  Save {rupee(it.mrp - it.unitPrice)}/pack
-                                </span>
-                              )}
-                            </div>
-                            <div className="mt-auto pt-3 flex items-end justify-between gap-3">
-                              <div className="flex items-center ink-border-thin rounded-full overflow-hidden bg-cream">
-                                <button
-                                  onClick={() => setQty(it.id, it.qty - 1)}
-                                  aria-label="Decrease"
-                                  className="h-9 w-9 grid place-items-center text-brown hover:bg-brown hover:text-cream transition-colors"
-                                >
-                                  <Minus size={13} />
-                                </button>
-                                <span className="w-9 text-center font-display text-base text-brown">{it.qty}</span>
-                                <button
-                                  onClick={() => setQty(it.id, it.qty + 1)}
-                                  aria-label="Increase"
-                                  className="h-9 w-9 grid place-items-center text-brown hover:bg-brown hover:text-cream transition-colors"
-                                >
-                                  <Plus size={13} />
-                                </button>
+                            <div className="text-right">
+                              <div className="font-script text-2xl text-rust leading-none">
+                                {rupee(it.unitPrice * it.qty)}
                               </div>
-                              <div className="text-right">
-                                <div className="font-script text-2xl text-rust leading-none">
-                                  {rupee(it.unitPrice * it.qty)}
-                                </div>
-                                <div className="text-[10px] text-brown/55 mt-1">
-                                  {rupee(it.unitPrice)} × {it.qty}
-                                </div>
+                              <div className="text-[10px] text-brown/55 mt-1">
+                                {rupee(it.unitPrice)} × {it.qty}
                               </div>
                             </div>
                           </div>
-                        </li>
-                      ))}
-                    </ul>
-                  </section>
-                ))}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
 
                 <div className="flex items-center justify-between text-xs text-brown/60 uppercase tracking-widest">
                   <Link to="/shop" className="hover:text-rust">← Continue shopping</Link>
