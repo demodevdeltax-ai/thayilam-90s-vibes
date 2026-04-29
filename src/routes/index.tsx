@@ -1,4 +1,3 @@
-import {  } from "@/lib/router-compat";
 import { Helmet } from "react-helmet-async";
 import { SiteHeader } from "@/components/site-header";
 import { Hero } from "@/components/hero";
