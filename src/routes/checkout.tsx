@@ -678,8 +678,8 @@ function PaymentStep({
         <button onClick={onBack} className="text-xs uppercase tracking-widest text-brown/70 hover:text-rust">
           ← Back
         </button>
-        <Button size="lg" onClick={onNext}>
-          Pay {rupee(total)} <ArrowRight size={16} className="ml-1" />
+        <Button size="lg" onClick={onNext} disabled={placing}>
+          {placing ? "Placing order…" : <>Pay {rupee(total)} <ArrowRight size={16} className="ml-1" /></>}
         </Button>
       </div>
     </section>
