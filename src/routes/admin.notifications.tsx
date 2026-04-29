@@ -90,6 +90,7 @@ function NotificationsPage() {
 
   return (
     <>
+      <RouteHead />
       <AdminPageHeader
         title="Notifications"
         subtitle="Reach customers across push, SMS and email — by segment or one-to-one."
