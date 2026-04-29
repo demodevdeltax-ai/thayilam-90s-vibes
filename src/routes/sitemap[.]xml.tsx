@@ -14,6 +14,7 @@ const STATIC_PATHS: Array<{ path: string; priority: string; freq: string }> = [
 ];
 
 export const Route = createFileRoute("/sitemap.xml")({
+  // @ts-expect-error - server block is supported at runtime via TanStack Start plugin
   server: {
     handlers: {
       GET: async () => {
