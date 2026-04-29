@@ -1,4 +1,4 @@
-import { createFileRoute, Link, notFound } from "@/lib/router-compat";
+import { Link } from "@/lib/router-compat";
 import { useMemo, useState } from "react";
 import {
   Star,
@@ -23,72 +23,9 @@ import { useAllProducts, loadProducts, getCachedProduct } from "@/lib/products-s
 import { useCart } from "@/lib/cart";
 import { useNavigate } from "@/lib/router-compat";
 
-export const Route = createFileRoute("/shop/$productId")({
-  component: ProductDetailPage,
-  loader: async ({ params }) => {
-    await loadProducts();
-    const product = getCachedProduct(params.productId);
-    if (!product) throw notFound();
-    return { product };
-  },
-  head: ({ loaderData, params }) => {
-    const p = loaderData?.product;
-    if (!p) return { meta: [{ title: "Product — Thayilam" }] };
-    const url = `https://thayilam-90s-vibes.lovable.app/shop/${params.productId}`;
-    return {
-      meta: [
-        { title: `${p.name} — Thayilam` },
-        {
-          name: "description",
-          content: `${p.name} (${p.telugu}). ${p.weight} pack at ${rupee(p.price)}. Hand-rolled in Chennai, ships within 24 hours.`,
-        },
-        { property: "og:title", content: `${p.name} — Thayilam` },
-        {
-          property: "og:description",
-          content: `Small-batch ${p.category.toLowerCase()}. Made fresh, no preservatives.`,
-        },
-        { property: "og:type", content: "product" },
-        { property: "og:url", content: url },
-        { property: "og:image", content: p.img },
-        { property: "twitter:image", content: p.img },
-      ],
-      links: [{ rel: "canonical", href: url }],
-      scripts: [
-        {
-          type: "application/ld+json",
-          children: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "Product",
-            name: p.name,
-            description: `${p.name} — small-batch ${p.category.toLowerCase()} from Thayilam.`,
-            image: p.img,
-            sku: p.sku,
-            brand: { "@type": "Brand", name: "Thayilam" },
-            category: p.category,
-            offers: {
-              "@type": "Offer",
-              priceCurrency: "INR",
-              price: p.price,
-              availability: "https://schema.org/InStock",
-              url,
-            },
-          }),
-        },
-      ],
-    };
-  },
-  notFoundComponent: () => (
-    <div className="min-h-screen grid place-items-center paper">
-      <div className="text-center">
-        <h1 className="font-display text-4xl text-brown">Snack not found</h1>
-        <p className="text-brown/70 mt-2">That dabba is empty.</p>
-        <div className="mt-6">
-          <Button asChild><Link to="/shop">Back to shop</Link></Button>
-        </div>
-      </div>
-    </div>
-  ),
-});
+
+export default ProductDetailPage;
+
 
 const WEIGHTS_AVAILABLE = ["100g", "250g", "500g"] as const;
 type WeightChoice = (typeof WEIGHTS_AVAILABLE)[number];

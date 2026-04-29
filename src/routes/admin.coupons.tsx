@@ -1,4 +1,5 @@
-import { createFileRoute } from "@/lib/router-compat";
+import {  } from "@/lib/router-compat";
+import { Helmet } from "react-helmet-async";
 import { useState } from "react";
 import { Plus, Pencil, Trash2, Ticket, Copy } from "lucide-react";
 import {
@@ -20,10 +21,17 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 
-export const Route = createFileRoute("/admin/coupons")({
-  head: () => ({ meta: [{ title: "Coupons & offers — Super Admin" }] }),
-  component: CouponsPage,
-});
+
+function RouteHead() {
+  return (
+    <Helmet>
+      <title>{"Coupons & offers — Super Admin"}</title>
+    </Helmet>
+  );
+}
+
+export default CouponsPage;
+
 
 function CouponsPage() {
   const offers = useOffers();
@@ -35,6 +43,8 @@ function CouponsPage() {
 
   return (
     <>
+      <RouteHead />
+      <>
       <AdminPageHeader
         title="Coupons & offers"
         subtitle="Discount codes, free shipping, vendor and category-scoped promos."
@@ -139,6 +149,7 @@ function CouponsPage() {
       </AdminCard>
 
       <CouponDialog open={open} onOpenChange={setOpen} editing={editing} />
+    </>
     </>
   );
 }

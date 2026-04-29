@@ -1,33 +1,26 @@
-import { createFileRoute, Link, useNavigate } from "@/lib/router-compat";
+import { Link, useNavigate } from "@/lib/router-compat";
+import { Helmet } from "react-helmet-async";
 import { useEffect } from "react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { WhatsAppOtpForm } from "@/components/whatsapp-otp-form";
 import { useAuth } from "@/lib/auth";
 
-export const Route = createFileRoute("/auth")({
-  head: () => ({
-    meta: [
-      { title: "Sign in with WhatsApp — Thayilam" },
-      {
-        name: "description",
-        content:
-          "Sign in or create your Thayilam account using a one-tap WhatsApp OTP. No passwords, no email — just your phone.",
-      },
-      { property: "og:title", content: "Sign in with WhatsApp — Thayilam" },
-      {
-        property: "og:description",
-        content: "Sign in to Thayilam using a WhatsApp OTP. No passwords.",
-      },
-      { name: "robots", content: "noindex" },
-    ],
-  }),
-  validateSearch: (s: Record<string, unknown>) => ({
-    redirect: typeof s.redirect === "string" ? s.redirect : "/",
-    mode: s.mode === "signup" ? "signup" : ("login" as "login" | "signup"),
-  }),
-  component: AuthPage,
-});
+
+function RouteHead() {
+  return (
+    <Helmet>
+      <title>{"Sign in with WhatsApp — Thayilam"}</title>
+      <meta name="description" content="Sign in or create your Thayilam account using a one-tap WhatsApp OTP. No passwords, no email — just your phone." />
+      <meta property="og:title" content="Sign in with WhatsApp — Thayilam" />
+      <meta property="og:description" content="Sign in to Thayilam using a WhatsApp OTP. No passwords." />
+      <meta name="robots" content="noindex" />
+    </Helmet>
+  );
+}
+
+export default AuthPage;
+
 
 function AuthPage() {
   const { redirect, mode } = Route.useSearch();
@@ -42,7 +35,9 @@ function AuthPage() {
   }, [isAuthenticated, isAdmin, loading, navigate, redirect]);
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <>
+      <RouteHead />
+      <div className="min-h-screen flex flex-col">
       <SiteHeader />
       <main className="flex-1 paper grid place-items-center px-5 py-12 md:py-20">
         <div className="w-full max-w-md">
@@ -77,5 +72,6 @@ function AuthPage() {
       </main>
       <SiteFooter />
     </div>
+    </>
   );
 }

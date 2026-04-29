@@ -1,4 +1,5 @@
-import { createFileRoute, Link, useNavigate } from "@/lib/router-compat";
+import { Link, useNavigate } from "@/lib/router-compat";
+import { Helmet } from "react-helmet-async";
 import { useEffect, useMemo, useState } from "react";
 import { Minus, Plus, Trash2, Tag, ChevronRight } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
@@ -9,18 +10,21 @@ import { rupee } from "@/lib/products";
 import { useAuth } from "@/lib/auth";
 import emptyDabba from "@/assets/illustration-empty-dabba.png";
 
-export const Route = createFileRoute("/cart")({
-  head: () => ({
-    meta: [
-      { title: "Your Dabba — Thayilam" },
-      { name: "description", content: "Review your hand-picked snacks before checkout. Cream-coloured cart, rust-coloured rupees." },
-      { property: "og:title", content: "Your Dabba — Thayilam" },
-      { property: "og:description", content: "Review your hand-picked Indian snacks before checkout." },
-      { name: "robots", content: "noindex, nofollow" },
-    ],
-  }),
-  component: CartPage,
-});
+
+function RouteHead() {
+  return (
+    <Helmet>
+      <title>{"Your Dabba — Thayilam"}</title>
+      <meta name="description" content="Review your hand-picked snacks before checkout. Cream-coloured cart, rust-coloured rupees." />
+      <meta property="og:title" content="Your Dabba — Thayilam" />
+      <meta property="og:description" content="Review your hand-picked Indian snacks before checkout." />
+      <meta name="robots" content="noindex, nofollow" />
+    </Helmet>
+  );
+}
+
+export default CartPage;
+
 
 const COUPONS: Record<string, { off: number; label: string }> = {
   PAATI10: { off: 0.1, label: "10% off — Paati's blessing" },
@@ -72,7 +76,9 @@ function CartPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <>
+      <RouteHead />
+      <div className="min-h-screen flex flex-col">
       <SiteHeader />
       <main className="flex-1 paper">
         <div className="border-b border-brown/20">
@@ -262,6 +268,7 @@ function CartPage() {
       </main>
       <SiteFooter />
     </div>
+    </>
   );
 }
 
