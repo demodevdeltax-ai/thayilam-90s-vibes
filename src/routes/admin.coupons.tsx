@@ -148,18 +148,19 @@ function CouponsPage() {
         </TableShell>
       </AdminCard>
 
-      <CouponDialog open={open} onOpenChange={setOpen} editing={editing} />
+      <CouponDialog open={open} onOpenChange={setOpen} editing={editing} categories={categories} />
     </>
     </>
   );
 }
 
 function CouponDialog({
-  open, onOpenChange, editing,
+  open, onOpenChange, editing, categories,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   editing: Offer | null;
+  categories: { id: string; name: string; slug: string; icon: string }[];
 }) {
   const blank: Omit<Offer, "id" | "used"> = {
     code: "", description: "", type: "flat", value: 50, minOrder: 0,
