@@ -6,10 +6,9 @@ import {
 } from "@/components/admin/ui";
 import { CATEGORIES } from "@/lib/products";
 import {
-  useApprovals, useFeatured, useFlagged,
-  setApproval, toggleFeatured, toggleFlag,
-} from "@/lib/admin-store";
-import { useAllProducts } from "@/lib/products-store";
+  useAllProducts, useApprovals, useFeatured, useFlagged,
+  setApproval, toggleFeatured, toggleFlag, deleteProduct,
+} from "@/lib/products-store";
 import { PackSizesPill, SkuPill } from "@/components/admin/pack-breakdown";
 import { PackSizeEditor } from "@/components/admin/pack-size-editor";
 import type { Product } from "@/lib/products";
