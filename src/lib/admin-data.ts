@@ -134,29 +134,21 @@ export const PAYOUTS: Payout[] = [
   mkPayout("PO-2504-J", "Komala Stores", "Apr 16–30, 2025", 21000, "Due"),
 ];
 
-// ----- Categories (admin-managed taxonomy) -----
+// ----- Categories (admin-managed taxonomy) — column names match the DB exactly -----
 export type AdminCategory = {
   id: string;
-  name: string;          // English
-  telugu: string;        // Telugu name
+  name: string;
+  name_telugu: string | null;
   slug: string;
-  icon: string;          // emoji or single-stroke glyph standing in for an SVG upload
-  parentId: string | null;
-  productCount: number;
-  active: boolean;
-  sortOrder: number;
+  parent_id: string | null;
+  sort_order: number;
+  is_visible: boolean;
+  icon: string | null;
+  icon_url: string | null;
+  created_at: string;
+  updated_at: string;
+  productCount?: number; // computed in store
 };
-export const ADMIN_CATEGORIES: AdminCategory[] = [
-  { id: "cat-1", name: "Murukku",  telugu: "మురుకులు",   slug: "murukku", icon: "🥨", parentId: null, productCount: PRODUCTS.filter(p => p.category === "Murukku").length, active: true,  sortOrder: 1 },
-  { id: "cat-2", name: "Ladoo",    telugu: "లడ్డూ",       slug: "ladoo",   icon: "🟡", parentId: null, productCount: PRODUCTS.filter(p => p.category === "Ladoo").length,   active: true,  sortOrder: 2 },
-  { id: "cat-3", name: "Chakli",   telugu: "చక్లి",       slug: "chakli",  icon: "➰", parentId: null, productCount: PRODUCTS.filter(p => p.category === "Chakli").length,  active: true,  sortOrder: 3 },
-  { id: "cat-4", name: "Mixture",  telugu: "మిక్చర్",     slug: "mixture", icon: "🌶️", parentId: null, productCount: PRODUCTS.filter(p => p.category === "Mixture").length, active: true,  sortOrder: 4 },
-  { id: "cat-5", name: "Pickle",   telugu: "ఊరగాయ",     slug: "pickle",  icon: "🫙", parentId: null, productCount: PRODUCTS.filter(p => p.category === "Pickle").length,  active: true,  sortOrder: 5 },
-  { id: "cat-6", name: "Pappad",   telugu: "అప్పడం",     slug: "pappad",  icon: "⭕", parentId: null, productCount: PRODUCTS.filter(p => p.category === "Pappad").length,  active: true,  sortOrder: 6 },
-  { id: "cat-7", name: "Sweets",   telugu: "మిఠాయిలు",   slug: "sweets",  icon: "🍬", parentId: null, productCount: PRODUCTS.filter(p => p.category === "Sweets").length,  active: true,  sortOrder: 7 },
-  { id: "cat-8", name: "Mysore Pak", telugu: "మైసూర్ పాక్", slug: "mysore-pak", icon: "🟫", parentId: "cat-7", productCount: 0, active: true, sortOrder: 8 },
-  { id: "cat-9", name: "Jalebi",   telugu: "జిలేబి",     slug: "jalebi",  icon: "🌀", parentId: "cat-7", productCount: 0, active: true, sortOrder: 9 },
-];
 
 // ----- Homepage Banners -----
 export type Banner = {

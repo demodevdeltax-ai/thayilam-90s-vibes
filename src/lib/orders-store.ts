@@ -1,9 +1,9 @@
 // Supabase-backed orders store (admin view)
 import { useEffect, useSyncExternalStore } from "react";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Order, OrderItem, OrderStatus } from "./vendor-data";
 import type { Weight } from "./products";
-import { logDbError } from "./db-compat";
 
 let CACHE: Order[] = [];
 let LOADED = false;
@@ -12,6 +12,12 @@ let LOADING: Promise<void> | null = null;
 const listeners = new Set<() => void>();
 const subscribe = (l: () => void) => { listeners.add(l); return () => listeners.delete(l); };
 const emit = () => listeners.forEach((l) => l());
+
+function reportError(scope: string, error: unknown) {
+  const msg = (error as { message?: string } | null)?.message ?? String(error);
+  console.error(`[${scope}]`, error);
+  toast.error(`${scope} failed`, { description: msg });
+}
 
 type OrderRow = {
   id: string;
@@ -62,7 +68,6 @@ function rowToOrder(r: OrderRow): Order {
   };
 }
 
-// Map order_number → uuid for status updates
 const NUMBER_TO_ID = new Map<string, string>();
 
 export async function loadOrders(force = false): Promise<Order[]> {
@@ -71,15 +76,15 @@ export async function loadOrders(force = false): Promise<Order[]> {
   LOADING = (async () => {
     const [{ data: orders, error }, { data: items, error: itemsError }] = await Promise.all([
       supabase
-      .from("orders")
-      .select("id,order_number,user_id,status,subtotal,discount,shipping,total,ship_name,ship_phone,ship_line,ship_city,ship_state,ship_pincode,placed_at,courier,tracking")
-      .order("placed_at", { ascending: false }),
+        .from("orders")
+        .select("id,order_number,user_id,status,subtotal,discount,shipping,total,ship_name,ship_phone,ship_line,ship_city,ship_state,ship_pincode,placed_at,courier,tracking")
+        .order("placed_at", { ascending: false }),
       supabase
         .from("order_items")
         .select("order_id,product_id,product_name,weight,qty,unit_price"),
     ]);
-    if (error) { logDbError("orders", error); CACHE = []; }
-    else if (itemsError) { logDbError("order_items", itemsError); CACHE = []; }
+    if (error) { reportError("Load orders", error); CACHE = []; }
+    else if (itemsError) { reportError("Load order items", itemsError); CACHE = []; }
     else {
       const byOrderId = new Map<string, OrderRow["order_items"]>();
       ((items ?? []) as unknown as OrderRow["order_items"]).forEach((i) => {
@@ -114,6 +119,7 @@ export async function setOrderStatus(orderNumber: string, status: OrderStatus): 
   const id = NUMBER_TO_ID.get(orderNumber);
   if (!id) return;
   const { error } = await supabase.from("orders").update({ status }).eq("id", id);
-  if (error) throw error;
+  if (error) { reportError("Update order status", error); return; }
+  toast.success(`Order marked ${status}`);
   await loadOrders(true);
 }

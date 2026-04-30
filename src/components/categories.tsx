@@ -16,13 +16,13 @@ const ICON_MAP: Record<string, IconC> = {
 };
 
 export function Categories() {
-  const cats = useAdminCategories().filter((c) => c.active && c.parentId === null);
+  const cats = useAdminCategories().filter((c) => c.is_visible && c.parent_id === null);
 
   // Always include "All Products" at the end
   const items: { label: string; Icon: IconC; emoji?: string; slug: string }[] = cats.map((c) => ({
     label: c.name,
     Icon: ICON_MAP[c.name] ?? LeafIcon,
-    emoji: !ICON_MAP[c.name] ? c.icon : undefined,
+    emoji: !ICON_MAP[c.name] ? (c.icon ?? undefined) : undefined,
     slug: c.slug,
   }));
   items.push({ label: "All Products", Icon: LeafIcon, slug: "" });

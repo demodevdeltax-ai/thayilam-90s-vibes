@@ -1,8 +1,8 @@
 // Supabase-backed coupons store
 import { useEffect, useSyncExternalStore } from "react";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Offer } from "./admin-data";
-import { isMissingColumn, logDbError } from "./db-compat";
 
 let CACHE: Offer[] = [];
 let LOADED = false;
@@ -29,6 +29,12 @@ type Row = {
   is_active: boolean;
 };
 
+function reportError(scope: string, error: unknown) {
+  const msg = (error as { message?: string } | null)?.message ?? String(error);
+  console.error(`[${scope}]`, error);
+  toast.error(`${scope} failed`, { description: msg });
+}
+
 function rowToOffer(r: Row): Offer {
   return {
     id: r.id,
@@ -52,21 +58,11 @@ export async function loadCoupons(force = false): Promise<Offer[]> {
   if (LOADED && !force) return CACHE;
   if (LOADING && !force) { await LOADING; return CACHE; }
   LOADING = (async () => {
-    const primary = await supabase
+    const { data, error } = await supabase
       .from("coupons")
       .select("id,code,description,discount_type,discount_value,min_order_value,max_discount,valid_from,valid_until,usage_count,usage_limit,scope,scope_targets,is_active")
       .order("created_at", { ascending: false });
-    let data: unknown = primary.data;
-    let error = primary.error;
-    if (isMissingColumn(error, "scope_targets") || isMissingColumn(error, "description")) {
-      const fallback = await supabase
-        .from("coupons")
-        .select("id,code,discount_type,discount_value,min_order_value,max_discount,valid_from,valid_until,usage_count,usage_limit,scope,is_active")
-        .order("created_at", { ascending: false });
-      data = fallback.data;
-      error = fallback.error;
-    }
-    if (error) { logDbError("coupons", error); CACHE = []; }
+    if (error) { reportError("Load coupons", error); CACHE = []; }
     else CACHE = ((data ?? []) as unknown as Row[]).map(rowToOffer);
     LOADED = true;
     LOADING = null;
@@ -86,7 +82,8 @@ export async function toggleOffer(id: string): Promise<void> {
   const o = CACHE.find((x) => x.id === id);
   if (!o) return;
   const { error } = await supabase.from("coupons").update({ is_active: !o.active }).eq("id", id);
-  if (error) throw error;
+  if (error) { reportError("Toggle coupon", error); return; }
+  toast.success(o.active ? "Coupon disabled" : "Coupon activated");
   await loadCoupons(true);
 }
 
@@ -108,25 +105,20 @@ export async function upsertOffer(input: OfferInput): Promise<void> {
     is_active: input.active,
   };
   if (input.id) {
-    let { error } = await supabase.from("coupons").update(payload as never).eq("id", input.id);
-    if (isMissingColumn(error, "scope_targets")) {
-      const { scope_targets: _scopeTargets, ...withoutScopeTargets } = payload;
-      ({ error } = await supabase.from("coupons").update(withoutScopeTargets as never).eq("id", input.id));
-    }
-    if (error) throw error;
+    const { error } = await supabase.from("coupons").update(payload).eq("id", input.id);
+    if (error) { reportError("Save coupon", error); return; }
+    toast.success("Coupon saved");
   } else {
-    let { error } = await supabase.from("coupons").insert(payload as never);
-    if (isMissingColumn(error, "scope_targets")) {
-      const { scope_targets: _scopeTargets, ...withoutScopeTargets } = payload;
-      ({ error } = await supabase.from("coupons").insert(withoutScopeTargets as never));
-    }
-    if (error) throw error;
+    const { error } = await supabase.from("coupons").insert(payload);
+    if (error) { reportError("Create coupon", error); return; }
+    toast.success("Coupon created");
   }
   await loadCoupons(true);
 }
 
 export async function deleteOffer(id: string): Promise<void> {
   const { error } = await supabase.from("coupons").delete().eq("id", id);
-  if (error) throw error;
+  if (error) { reportError("Delete coupon", error); return; }
+  toast.success("Coupon deleted");
   await loadCoupons(true);
 }
