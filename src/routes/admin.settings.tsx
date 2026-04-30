@@ -1,9 +1,10 @@
 import { Helmet } from "react-helmet-async";
 import { useState } from "react";
-import { Save, Shield, KeyRound, Mail } from "lucide-react";
+import { Save, Shield, Mail } from "lucide-react";
 import { AdminPageHeader, AdminCard } from "@/components/admin/ui";
 import { Switch } from "@/components/ui/switch";
-
+import { useSettings, saveSettings, type PlatformSettings } from "@/lib/settings-store";
+import { toast } from "sonner";
 
 function RouteHead() {
   return (
@@ -15,23 +16,32 @@ function RouteHead() {
 
 export default SettingsPage;
 
-
 function SettingsPage() {
-  const [form, setForm] = useState({
-    platformName: "Thayilam",
-    supportEmail: "support@thayilam.in",
-    defaultCommission: 12,
-    minPayout: 1000,
-    freeShipThreshold: 999,
-    twoFactor: true,
-    autoApproveVendors: false,
-    publicCatalog: true,
-  });
+  const initial = useSettings();
+  const [form, setForm] = useState<PlatformSettings>(initial);
+  const [saving, setSaving] = useState(false);
+
+  // Sync form when settings load
+  if (form.platformName !== initial.platformName && !saving && form.platformName === "Thayilam" && initial.platformName !== "Thayilam") {
+    setForm(initial);
+  }
+
+  async function handleSave() {
+    setSaving(true);
+    try {
+      await saveSettings(form);
+      toast.success("Settings saved");
+    } catch (e) {
+      toast.error("Failed to save settings");
+      console.error(e);
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <>
       <RouteHead />
-      <>
       <AdminPageHeader
         title="Platform settings"
         subtitle="The knobs that govern how Thayilam runs end to end."
@@ -78,8 +88,12 @@ function SettingsPage() {
           </div>
 
           <div className="mt-6 flex justify-end">
-            <button className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-md bg-[#C4541A] hover:bg-[#a8470e] text-white text-sm font-medium">
-              <Save size={14} /> Save changes
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-md bg-[#C4541A] hover:bg-[#a8470e] disabled:opacity-50 text-white text-sm font-medium"
+            >
+              <Save size={14} /> {saving ? "Saving…" : "Save changes"}
             </button>
           </div>
         </AdminCard>
@@ -94,16 +108,6 @@ function SettingsPage() {
                 value={form.twoFactor}
                 onChange={(v) => setForm({ ...form, twoFactor: v })}
               />
-            </div>
-          </AdminCard>
-
-          <AdminCard>
-            <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2"><KeyRound size={14} /> API keys</h3>
-            <p className="text-xs text-slate-500 mt-1">For payments, SMS and shipping integrations.</p>
-            <div className="mt-3 space-y-2">
-              <KeyRow name="Razorpay" mask="rzp_live_••••3F2A" />
-              <KeyRow name="Delhivery" mask="dl_••••8201" />
-              <KeyRow name="MSG91 (SMS)" mask="msg_••••AA12" />
             </div>
           </AdminCard>
 
@@ -128,7 +132,6 @@ function SettingsPage() {
         .ainp:focus { border-color: #475569; box-shadow: 0 0 0 3px rgba(71,85,105,0.12); }
       `}</style>
     </>
-    </>
   );
 }
 
@@ -149,15 +152,6 @@ function Toggle({ label, description, value, onChange }: { label: string; descri
         <div className="text-xs text-slate-500 mt-0.5">{description}</div>
       </div>
       <Switch checked={value} onCheckedChange={onChange} />
-    </div>
-  );
-}
-
-function KeyRow({ name, mask }: { name: string; mask: string }) {
-  return (
-    <div className="flex items-center justify-between border border-slate-200 rounded px-3 py-2">
-      <div className="text-sm text-slate-700">{name}</div>
-      <code className="text-xs font-mono text-slate-500">{mask}</code>
     </div>
   );
 }
