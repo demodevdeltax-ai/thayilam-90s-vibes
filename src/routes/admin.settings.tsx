@@ -1,5 +1,5 @@
 import { Helmet } from "react-helmet-async";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Save, Shield, Mail } from "lucide-react";
 import { AdminPageHeader, AdminCard } from "@/components/admin/ui";
 import { Switch } from "@/components/ui/switch";
