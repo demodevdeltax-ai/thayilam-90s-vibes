@@ -188,6 +188,11 @@ function ProductsPage() {
                         <Pencil size={14} />
                       </button>
                       <button
+                        onClick={() => {
+                          if (confirm(`Remove “${p.name}” from the catalog?`)) {
+                            void deleteProduct(p.id);
+                          }
+                        }}
                         className="h-7 w-7 grid place-items-center rounded-md hover:bg-rose-50 text-rose-500"
                         title="Remove listing"
                       >
