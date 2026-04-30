@@ -4,7 +4,7 @@ import { Search, Mail, Phone } from "lucide-react";
 import {
   AdminPageHeader, AdminCard, TableShell, Th, Td, rupee,
 } from "@/components/admin/ui";
-import { CUSTOMERS } from "@/lib/admin-data";
+import { useCustomers } from "@/lib/customers-store";
 
 
 function RouteHead() {
@@ -20,20 +20,21 @@ export default CustomersPage;
 
 function CustomersPage() {
   const [q, setQ] = useState("");
+  const customers = useCustomers();
 
   const filtered = useMemo(() => {
-    if (!q) return CUSTOMERS;
+    if (!q) return customers;
     const ql = q.toLowerCase();
-    return CUSTOMERS.filter((c) =>
+    return customers.filter((c) =>
       c.name.toLowerCase().includes(ql) ||
       c.email.toLowerCase().includes(ql) ||
       c.city.toLowerCase().includes(ql) ||
       c.phone.includes(q),
     );
-  }, [q]);
+  }, [q, customers]);
 
-  const totalSpend = CUSTOMERS.reduce((s, c) => s + c.spend, 0);
-  const totalOrders = CUSTOMERS.reduce((s, c) => s + c.orders, 0);
+  const totalSpend = customers.reduce((s, c) => s + c.spend, 0);
+  const totalOrders = customers.reduce((s, c) => s + c.orders, 0);
 
   return (
     <>
@@ -47,7 +48,7 @@ function CustomersPage() {
       <div className="grid grid-cols-3 gap-3 mb-5">
         <AdminCard className="border-l-4 border-l-slate-300">
           <div className="text-[11px] uppercase tracking-wider text-slate-500 font-medium">Customers</div>
-          <div className="text-[24px] font-semibold mt-1 tabular-nums">{CUSTOMERS.length}</div>
+          <div className="text-[24px] font-semibold mt-1 tabular-nums">{customers.length}</div>
         </AdminCard>
         <AdminCard className="border-l-4 border-l-[#6B7C4A]">
           <div className="text-[11px] uppercase tracking-wider text-slate-500 font-medium">Total orders</div>
