@@ -6,9 +6,9 @@ import {
 } from "@/components/admin/ui";
 import {
   useOffers, toggleOffer, upsertOffer, deleteOffer,
-} from "@/lib/admin-store";
-import { VENDORS } from "@/lib/products";
-import { ADMIN_CATEGORIES, type Offer } from "@/lib/admin-data";
+} from "@/lib/coupons-store";
+import { useAdminCategories } from "@/lib/categories-store";
+import { type Offer } from "@/lib/admin-data";
 import { Switch } from "@/components/ui/switch";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
