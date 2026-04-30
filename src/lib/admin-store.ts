@@ -8,7 +8,6 @@ import {
   PAYOUTS,
   BANNERS,
   OFFERS,
-  ADMIN_CATEGORIES,
   SENT_NOTIFICATIONS,
   type VendorStatus,
   type AdminVendor,
@@ -16,7 +15,6 @@ import {
   type PayoutStatus,
   type Banner,
   type Offer,
-  type AdminCategory,
   type SentNotification,
   type NotifAudience,
   type NotifChannel,
@@ -110,49 +108,7 @@ export function useOffers(): Offer[] {
   return useSyncExternalStore(subscribe, () => OFFERS, () => OFFERS);
 }
 
-// ---------- Categories ----------
-export function toggleCategory(id: string) {
-  const c = ADMIN_CATEGORIES.find((x) => x.id === id);
-  if (!c) return;
-  c.active = !c.active;
-  emit();
-}
-export function reorderCategories(orderedIds: string[]) {
-  orderedIds.forEach((id, idx) => {
-    const c = ADMIN_CATEGORIES.find((x) => x.id === id);
-    if (c) c.sortOrder = idx + 1;
-  });
-  ADMIN_CATEGORIES.sort((a, b) => a.sortOrder - b.sortOrder);
-  emit();
-}
-type CategoryInput = Omit<AdminCategory, "id" | "productCount" | "sortOrder"> & { id?: string };
-export function upsertCategory(input: CategoryInput) {
-  if (input.id) {
-    const c = ADMIN_CATEGORIES.find((x) => x.id === input.id);
-    if (!c) return;
-    Object.assign(c, input);
-  } else {
-    const id = `cat-${Date.now()}`;
-    ADMIN_CATEGORIES.push({
-      ...input,
-      id,
-      productCount: 0,
-      sortOrder: ADMIN_CATEGORIES.length + 1,
-    });
-  }
-  emit();
-}
-export function deleteCategory(id: string) {
-  const idx = ADMIN_CATEGORIES.findIndex((x) => x.id === id);
-  if (idx < 0) return;
-  // Re-parent children to root
-  ADMIN_CATEGORIES.forEach((c) => { if (c.parentId === id) c.parentId = null; });
-  ADMIN_CATEGORIES.splice(idx, 1);
-  emit();
-}
-export function useAdminCategories(): AdminCategory[] {
-  return useSyncExternalStore(subscribe, () => ADMIN_CATEGORIES, () => ADMIN_CATEGORIES);
-}
+// ---------- Categories: see categories-store.ts (Supabase-backed) ----------
 
 // ---------- Banner mutations ----------
 type BannerInput = Omit<Banner, "id" | "sortOrder"> & { id?: string; sortOrder?: number };

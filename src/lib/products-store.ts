@@ -5,7 +5,13 @@ import { useEffect, useSyncExternalStore } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import type { Category, Diet, Product, Weight } from "./products";
-import { isMissingColumn, logDbError } from "./db-compat";
+import { toast } from "sonner";
+
+function reportError(scope: string, error: unknown) {
+  const msg = (error as { message?: string } | null)?.message ?? String(error);
+  console.error(`[${scope}]`, error);
+  toast.error(`${scope} failed`, { description: msg });
+}
 
 type Row = Database["public"]["Tables"]["products"]["Row"];
 
