@@ -20,11 +20,14 @@ function SettingsPage() {
   const initial = useSettings();
   const [form, setForm] = useState<PlatformSettings>(initial);
   const [saving, setSaving] = useState(false);
+  const [synced, setSynced] = useState(false);
 
-  // Sync form when settings load
-  if (form.platformName !== initial.platformName && !saving && form.platformName === "Thayilam" && initial.platformName !== "Thayilam") {
-    setForm(initial);
-  }
+  useEffect(() => {
+    if (!synced) {
+      setForm(initial);
+      setSynced(true);
+    }
+  }, [initial, synced]);
 
   async function handleSave() {
     setSaving(true);
