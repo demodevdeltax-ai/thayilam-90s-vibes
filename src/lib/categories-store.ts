@@ -42,10 +42,12 @@ export async function loadCategories(force = false): Promise<AdminCategory[]> {
   if (LOADED && !force) return CACHE;
   if (LOADING && !force) { await LOADING; return CACHE; }
   LOADING = (async () => {
-    let { data, error } = await supabase
+    const primary = await supabase
       .from("categories")
       .select("id,name,name_telugu,slug,parent_id,sort_order,is_visible,icon" as never)
       .order("sort_order", { ascending: true });
+    let data: unknown = primary.data;
+    let error = primary.error;
     if (isMissingColumn(error, "icon")) {
       const fallback = await supabase
         .from("categories")
