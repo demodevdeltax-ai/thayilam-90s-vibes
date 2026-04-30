@@ -2,6 +2,7 @@
 import { useEffect, useSyncExternalStore } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Banner } from "./admin-data";
+import { logDbError } from "./db-compat";
 
 let CACHE: Banner[] = [];
 let LOADED = false;
@@ -47,9 +48,9 @@ export async function loadBanners(force = false): Promise<Banner[]> {
   LOADING = (async () => {
     const { data, error } = await supabase
       .from("banners")
-      .select("*")
+      .select("id,title,subtitle,cta,image_url,link_url,placement,is_active,active_from,active_until,sort_order")
       .order("sort_order", { ascending: true });
-    if (error) { console.error("[banners] load failed:", error); CACHE = []; }
+    if (error) { logDbError("banners", error); CACHE = []; }
     else CACHE = ((data ?? []) as unknown as Row[]).map(rowToBanner);
     LOADED = true;
     LOADING = null;
@@ -68,7 +69,8 @@ export function useBanners(): Banner[] {
 export async function toggleBanner(id: string): Promise<void> {
   const b = CACHE.find((x) => x.id === id);
   if (!b) return;
-  await supabase.from("banners").update({ is_active: !b.active }).eq("id", id);
+  const { error } = await supabase.from("banners").update({ is_active: !b.active }).eq("id", id);
+  if (error) throw error;
   await loadBanners(true);
 }
 
@@ -88,14 +90,17 @@ export async function upsertBanner(input: BannerInput): Promise<void> {
     sort_order: input.sortOrder ?? CACHE.length + 1,
   };
   if (input.id) {
-    await supabase.from("banners").update(payload as never).eq("id", input.id);
+    const { error } = await supabase.from("banners").update(payload as never).eq("id", input.id);
+    if (error) throw error;
   } else {
-    await supabase.from("banners").insert(payload as never);
+    const { error } = await supabase.from("banners").insert(payload as never);
+    if (error) throw error;
   }
   await loadBanners(true);
 }
 
 export async function deleteBanner(id: string): Promise<void> {
-  await supabase.from("banners").delete().eq("id", id);
+  const { error } = await supabase.from("banners").delete().eq("id", id);
+  if (error) throw error;
   await loadBanners(true);
 }
