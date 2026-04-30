@@ -172,6 +172,39 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          audience: Json
+          body: string
+          channel: string
+          id: string
+          recipients: number
+          sent_at: string
+          sent_by: string | null
+          title: string
+        }
+        Insert: {
+          audience?: Json
+          body: string
+          channel: string
+          id?: string
+          recipients?: number
+          sent_at?: string
+          sent_by?: string | null
+          title: string
+        }
+        Update: {
+          audience?: Json
+          body?: string
+          channel?: string
+          id?: string
+          recipients?: number
+          sent_at?: string
+          sent_by?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           created_at: string
@@ -295,8 +328,51 @@ export type Database = {
         }
         Relationships: []
       }
+      platform_settings: {
+        Row: {
+          auto_approve_vendors: boolean
+          default_commission: number
+          free_ship_threshold: number
+          id: string
+          min_payout: number
+          platform_name: string
+          public_catalog: boolean
+          singleton: boolean
+          support_email: string
+          two_factor: boolean
+          updated_at: string
+        }
+        Insert: {
+          auto_approve_vendors?: boolean
+          default_commission?: number
+          free_ship_threshold?: number
+          id?: string
+          min_payout?: number
+          platform_name?: string
+          public_catalog?: boolean
+          singleton?: boolean
+          support_email?: string
+          two_factor?: boolean
+          updated_at?: string
+        }
+        Update: {
+          auto_approve_vendors?: boolean
+          default_commission?: number
+          free_ship_threshold?: number
+          id?: string
+          min_payout?: number
+          platform_name?: string
+          public_catalog?: boolean
+          singleton?: boolean
+          support_email?: string
+          two_factor?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       products: {
         Row: {
+          approval_status: string
           badge: string | null
           category_id: string | null
           category_name: string | null
@@ -308,6 +384,8 @@ export type Database = {
           id: string
           image_url: string | null
           is_active: boolean
+          is_featured: boolean
+          is_flagged: boolean
           mrp: number | null
           name: string
           name_telugu: string | null
@@ -319,6 +397,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          approval_status?: string
           badge?: string | null
           category_id?: string | null
           category_name?: string | null
@@ -330,6 +409,8 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean
+          is_featured?: boolean
+          is_flagged?: boolean
           mrp?: number | null
           name: string
           name_telugu?: string | null
@@ -341,6 +422,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          approval_status?: string
           badge?: string | null
           category_id?: string | null
           category_name?: string | null
@@ -352,6 +434,8 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean
+          is_featured?: boolean
+          is_flagged?: boolean
           mrp?: number | null
           name?: string
           name_telugu?: string | null
