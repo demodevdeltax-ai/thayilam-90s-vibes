@@ -2,9 +2,9 @@ import { useMemo, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { Send, Bell, MessageSquare, Mail, Sparkles } from "lucide-react";
 import { AdminPageHeader, AdminCard } from "@/components/admin/ui";
-import { sendNotification, useSentNotifications } from "@/lib/admin-store";
+import { useNotifications, sendNotification } from "@/lib/notifications-store";
+import { useCustomers } from "@/lib/customers-store";
 import {
-  CUSTOMERS,
   NOTIF_TEMPLATES,
   type NotifChannel,
   type NotifAudience,
@@ -15,6 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import { toast } from "sonner";
 
 function RouteHead() {
   return (
@@ -33,27 +34,35 @@ const CHANNEL_META: Record<NotifChannel, { label: string; Icon: typeof Bell; col
 };
 
 function NotificationsPage() {
-  const sent = useSentNotifications();
+  const sent = useNotifications();
+  const customers = useCustomers();
   const [channel, setChannel] = useState<NotifChannel>("push");
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [audienceKind, setAudienceKind] = useState<"all" | "city" | "lapsed" | "individual">("all");
-  const [city, setCity] = useState("Chennai");
+  const [city, setCity] = useState("");
   const [days, setDays] = useState(60);
-  const [customerId, setCustomerId] = useState(CUSTOMERS[0]?.id ?? "");
+  const [customerId, setCustomerId] = useState("");
+  const [sending, setSending] = useState(false);
 
-  const cities = useMemo(() => Array.from(new Set(CUSTOMERS.map((c) => c.city))).sort(), []);
+  const cities = useMemo(
+    () => Array.from(new Set(customers.map((c) => c.city).filter((c) => c && c !== "—"))).sort(),
+    [customers],
+  );
 
-  // Compute recipient count
+  // initialize selectors when customers load
+  if (!city && cities.length > 0) setCity(cities[0]);
+  if (!customerId && customers.length > 0) setCustomerId(customers[0].id);
+
   const recipients = useMemo(() => {
-    if (audienceKind === "all") return CUSTOMERS.length * 1052; // mock total customer base
-    if (audienceKind === "city") return CUSTOMERS.filter((c) => c.city === city).length * 220;
+    if (audienceKind === "all") return customers.length;
+    if (audienceKind === "city") return customers.filter((c) => c.city === city).length;
     if (audienceKind === "lapsed") {
       const cutoff = Date.now() - days * 86_400_000;
-      return CUSTOMERS.filter((c) => new Date(c.joinedAt).getTime() < cutoff).length * 80;
+      return customers.filter((c) => new Date(c.joinedAt).getTime() < cutoff).length;
     }
     return 1;
-  }, [audienceKind, city, days]);
+  }, [audienceKind, city, days, customers]);
 
   function applyTemplate(id: string) {
     const t = NOTIF_TEMPLATES.find((x) => x.id === id);
@@ -63,7 +72,7 @@ function NotificationsPage() {
     setBody(t.body);
   }
 
-  function send() {
+  async function send() {
     if (!title.trim() || !body.trim()) return;
     let audience: NotifAudience;
     if (audienceKind === "all") audience = { kind: "all" };
@@ -71,9 +80,18 @@ function NotificationsPage() {
     else if (audienceKind === "lapsed") audience = { kind: "lapsed", days };
     else audience = { kind: "individual", customerId };
 
-    sendNotification({ channel, title: title.trim(), body: body.trim(), audience, recipients });
-    setTitle("");
-    setBody("");
+    setSending(true);
+    try {
+      await sendNotification({ channel, title: title.trim(), body: body.trim(), audience, recipients });
+      setTitle("");
+      setBody("");
+      toast.success(`Campaign saved · ${recipients} recipient${recipients === 1 ? "" : "s"}`);
+    } catch (e) {
+      console.error(e);
+      toast.error("Failed to send notification");
+    } finally {
+      setSending(false);
+    }
   }
 
   function audienceLabel(a: NotifAudience): string {
@@ -82,7 +100,7 @@ function NotificationsPage() {
       case "city": return `City · ${a.city}`;
       case "lapsed": return `Lapsed > ${a.days} days`;
       case "individual": {
-        const c = CUSTOMERS.find((x) => x.id === a.customerId);
+        const c = customers.find((x) => x.id === a.customerId);
         return c ? `Individual · ${c.name}` : "Individual customer";
       }
     }
@@ -97,11 +115,9 @@ function NotificationsPage() {
       />
 
       <div className="grid lg:grid-cols-[1.2fr_1fr] gap-4">
-        {/* Composer */}
         <AdminCard>
           <h3 className="text-sm font-semibold text-slate-900 mb-4">Compose message</h3>
 
-          {/* Channel */}
           <div className="grid grid-cols-3 gap-2 mb-4">
             {(["push", "sms", "email"] as NotifChannel[]).map((c) => {
               const meta = CHANNEL_META[c];
@@ -123,19 +139,18 @@ function NotificationsPage() {
             })}
           </div>
 
-          {/* Audience */}
           <div className="space-y-3 mb-4">
             <Label className="text-xs">Audience</Label>
             <Select value={audienceKind} onValueChange={(v) => setAudienceKind(v as typeof audienceKind)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All customers</SelectItem>
-                <SelectItem value="city">By city</SelectItem>
-                <SelectItem value="lapsed">Lapsed customers (haven't ordered recently)</SelectItem>
-                <SelectItem value="individual">Individual customer</SelectItem>
+                <SelectItem value="city" disabled={cities.length === 0}>By city</SelectItem>
+                <SelectItem value="lapsed">Lapsed customers</SelectItem>
+                <SelectItem value="individual" disabled={customers.length === 0}>Individual customer</SelectItem>
               </SelectContent>
             </Select>
-            {audienceKind === "city" && (
+            {audienceKind === "city" && cities.length > 0 && (
               <Select value={city} onValueChange={setCity}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -145,24 +160,23 @@ function NotificationsPage() {
             )}
             {audienceKind === "lapsed" && (
               <div>
-                <Label className="text-xs text-slate-500">Days since last order</Label>
+                <Label className="text-xs text-slate-500">Days since joining</Label>
                 <Input type="number" value={days} onChange={(e) => setDays(Number(e.target.value))} />
               </div>
             )}
-            {audienceKind === "individual" && (
+            {audienceKind === "individual" && customers.length > 0 && (
               <Select value={customerId} onValueChange={setCustomerId}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {CUSTOMERS.map((c) => <SelectItem key={c.id} value={c.id}>{c.name} · {c.city}</SelectItem>)}
+                  {customers.map((c) => <SelectItem key={c.id} value={c.id}>{c.name} · {c.city}</SelectItem>)}
                 </SelectContent>
               </Select>
             )}
             <div className="text-xs text-slate-500 bg-slate-50 rounded-md px-3 py-2">
-              Estimated reach: <span className="font-semibold text-slate-900 tabular-nums">{recipients.toLocaleString("en-IN")}</span> recipients
+              Estimated reach: <span className="font-semibold text-slate-900 tabular-nums">{recipients.toLocaleString("en-IN")}</span> recipient{recipients === 1 ? "" : "s"}
             </div>
           </div>
 
-          {/* Content */}
           <div className="space-y-3">
             <div>
               <Label className="text-xs">Title</Label>
@@ -184,15 +198,14 @@ function NotificationsPage() {
             </div>
             <button
               onClick={send}
-              disabled={!title.trim() || !body.trim()}
+              disabled={sending || !title.trim() || !body.trim()}
               className="inline-flex items-center gap-1.5 h-10 px-4 rounded-md bg-[#C4541A] hover:bg-[#a8470e] disabled:opacity-50 text-white text-sm font-medium"
             >
-              <Send size={14} /> Send to {recipients.toLocaleString("en-IN")} recipients
+              <Send size={14} /> {sending ? "Sending…" : `Send to ${recipients.toLocaleString("en-IN")} recipient${recipients === 1 ? "" : "s"}`}
             </button>
           </div>
         </AdminCard>
 
-        {/* Templates + preview */}
         <div className="space-y-4">
           <AdminCard padding={false}>
             <div className="flex items-center justify-between p-4 border-b border-slate-100">
