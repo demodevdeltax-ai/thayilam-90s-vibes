@@ -17,22 +17,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 
-// ── Type aligned to DB schema ─────────────────────────────────────────────────
-export interface AdminCategory {
-  id: string;                  // uuid
-  name: string;                // text NOT NULL
-  name_telugu: string | null;  // text (was: telugu)
-  slug: string;                // text NOT NULL UNIQUE
-  parent_id: string | null;    // uuid FK → categories.id (was: parentId)
-  sort_order: number;          // integer (was: sortOrder)
-  is_visible: boolean;         // boolean (was: active)
-  icon: string | null;         // text (emoji / short string)
-  icon_url: string | null;     // text (SVG upload URL)
-  created_at: string;          // timestamptz
-  updated_at: string;          // timestamptz
-  // UI-only, computed/joined
-  productCount?: number;
-}
+// AdminCategory type lives in src/lib/admin-data.ts and matches DB columns exactly.
 
 function RouteHead() {
   return (

@@ -187,7 +187,8 @@ function toRowPatch(p: ProductPatch): Database["public"]["Tables"]["products"]["
 
 export async function updateProduct(id: string, patch: ProductPatch): Promise<void> {
   const { error } = await supabase.from("products").update(toRowPatch(patch)).eq("id", id);
-  if (error) throw error;
+  if (error) { reportError("Save product", error); throw error; }
+  toast.success("Product saved");
   await loadProducts(true);
 }
 
@@ -198,38 +199,56 @@ export async function updatePackSizes(id: string, sizes: number[]): Promise<void
 export type NewProductInput = Required<Pick<ProductPatch, "name" | "category" | "price" | "sku">> &
   Partial<ProductPatch> & { slug?: string };
 
+async function findUniqueProductSlug(base: string): Promise<string> {
+  const root = base.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "").slice(0, 80) || "product";
+  let candidate = root;
+  let n = 0;
+  while (n < 100) {
+    const { data, error } = await supabase
+      .from("products").select("id").eq("slug", candidate).limit(1).maybeSingle();
+    if (error) throw error;
+    if (!data) return candidate;
+    n += 1;
+    candidate = `${root}-${n}`;
+  }
+  throw new Error("Could not find unique product slug");
+}
+
 export async function createProduct(input: NewProductInput): Promise<string> {
-  const slug = (input.slug ?? input.name)
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "")
-    .slice(0, 80);
-  const insert: Database["public"]["Tables"]["products"]["Insert"] = {
-    name: input.name,
-    name_telugu: input.telugu ?? "",
-    slug,
-    sku: input.sku,
-    price: input.price,
-    mrp: input.mrp ?? null,
-    category_name: input.category,
-    badge: input.badge ?? null,
-    description: input.description ?? "",
-    highlights: input.highlights ?? [],
-    diet: input.diet ?? [],
-    pack_sizes: input.packSizes ?? [100, 250, 500],
-    default_weight: input.defaultWeight ?? "250g",
-    image_url: input.imageUrl ?? null,
-    popularity: input.popularity ?? 50,
-  };
-  const { data, error } = await supabase.from("products").insert(insert).select("id").single();
-  if (error) throw error;
-  await loadProducts(true);
-  return data.id;
+  try {
+    const slug = await findUniqueProductSlug(input.slug ?? input.name);
+    const insert: Database["public"]["Tables"]["products"]["Insert"] = {
+      name: input.name,
+      name_telugu: input.telugu ?? "",
+      slug,
+      sku: input.sku,
+      price: input.price,
+      mrp: input.mrp ?? null,
+      category_name: input.category,
+      badge: input.badge ?? null,
+      description: input.description ?? "",
+      highlights: input.highlights ?? [],
+      diet: input.diet ?? [],
+      pack_sizes: input.packSizes ?? [100, 250, 500],
+      default_weight: input.defaultWeight ?? "250g",
+      image_url: input.imageUrl ?? null,
+      popularity: input.popularity ?? 50,
+    };
+    const { data, error } = await supabase.from("products").insert(insert).select("id").single();
+    if (error) throw error;
+    toast.success("Product created");
+    await loadProducts(true);
+    return data.id;
+  } catch (e) {
+    reportError("Create product", e);
+    throw e;
+  }
 }
 
 export async function deleteProduct(id: string): Promise<void> {
   const { error } = await supabase.from("products").delete().eq("id", id);
-  if (error) throw error;
+  if (error) { reportError("Delete product", error); return; }
+  toast.success("Product deleted");
   await loadProducts(true);
 }
 
