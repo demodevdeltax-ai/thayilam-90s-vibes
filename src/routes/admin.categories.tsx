@@ -168,7 +168,6 @@ function CategoryDialog({
       name: form.name.trim(),
       telugu: form.telugu.trim(),
       slug: form.slug.trim().toLowerCase().replace(/\s+/g, "-"),
-      icon: form.icon || "•",
       parentId: form.parentId,
       active: form.active,
     });
