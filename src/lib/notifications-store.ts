@@ -2,6 +2,7 @@
 import { useEffect, useSyncExternalStore } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { NotifAudience, NotifChannel, SentNotification } from "./admin-data";
+import { logDbError } from "./db-compat";
 
 let CACHE: SentNotification[] = [];
 let LOADED = false;
@@ -17,10 +18,10 @@ export async function loadNotifications(force = false): Promise<SentNotification
   LOADING = (async () => {
     const { data, error } = await supabase
       .from("notifications")
-      .select("*")
+      .select("id,channel,title,body,audience,recipients,sent_at")
       .order("sent_at", { ascending: false })
       .limit(100);
-    if (error) { console.error("[notifications] load failed:", error); CACHE = []; }
+    if (error) { logDbError("notifications", error); CACHE = []; }
     else {
       CACHE = (data ?? []).map((r): SentNotification => ({
         id: r.id,
