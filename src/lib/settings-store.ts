@@ -1,7 +1,7 @@
 // Supabase-backed platform settings (singleton row).
 import { useEffect, useSyncExternalStore } from "react";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { logDbError } from "./db-compat";
 
 export type PlatformSettings = {
   platformName: string;
@@ -33,6 +33,12 @@ const listeners = new Set<() => void>();
 const subscribe = (l: () => void) => { listeners.add(l); return () => listeners.delete(l); };
 const emit = () => listeners.forEach((l) => l());
 
+function reportError(scope: string, error: unknown) {
+  const msg = (error as { message?: string } | null)?.message ?? String(error);
+  console.error(`[${scope}]`, error);
+  toast.error(`${scope} failed`, { description: msg });
+}
+
 export async function loadSettings(force = false): Promise<PlatformSettings> {
   if (LOADED && !force) return CACHE;
   if (LOADING && !force) { await LOADING; return CACHE; }
@@ -42,7 +48,7 @@ export async function loadSettings(force = false): Promise<PlatformSettings> {
       .select("platform_name,support_email,default_commission,min_payout,free_ship_threshold,two_factor,auto_approve_vendors,public_catalog")
       .limit(1)
       .maybeSingle();
-    if (error) logDbError("settings", error);
+    if (error) reportError("Load settings", error);
     if (data) {
       CACHE = {
         platformName: data.platform_name,
@@ -82,6 +88,7 @@ export async function saveSettings(patch: Partial<PlatformSettings>): Promise<vo
     ...(patch.publicCatalog !== undefined && { public_catalog: patch.publicCatalog }),
   };
   const { error } = await supabase.from("platform_settings").update(row).eq("singleton", true);
-  if (error) throw error;
+  if (error) { reportError("Save settings", error); return; }
+  toast.success("Settings saved");
   await loadSettings(true);
 }

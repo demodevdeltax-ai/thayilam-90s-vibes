@@ -1,4 +1,5 @@
 import { useEffect, useSyncExternalStore } from "react";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { AdminCategory } from "./admin-data";
 
@@ -28,17 +29,39 @@ function rowToCategory(r: Row): AdminCategory {
   return {
     id: r.id,
     name: r.name,
-    name_telugu: r.name_telugu,       // ← was mapped to wrong field "telugu"
+    name_telugu: r.name_telugu,
     slug: r.slug,
     icon: r.icon,
     icon_url: r.icon_url,
     parent_id: r.parent_id,
     sort_order: r.sort_order,
-    is_visible: r.is_visible,         // ← was mapped to wrong field "active"
+    is_visible: r.is_visible,
     created_at: r.created_at,
     updated_at: r.updated_at,
     productCount: 0,
   };
+}
+
+function reportError(scope: string, error: unknown) {
+  const msg = (error as { message?: string } | null)?.message ?? String(error);
+  console.error(`[${scope}]`, error);
+  toast.error(`${scope} failed`, { description: msg });
+}
+
+async function findUniqueSlug(base: string, excludeId?: string): Promise<string> {
+  const root = base.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "").slice(0, 80) || "item";
+  let candidate = root;
+  let n = 0;
+  while (n < 100) {
+    let q = supabase.from("categories").select("id").eq("slug", candidate).limit(1);
+    if (excludeId) q = q.neq("id", excludeId);
+    const { data, error } = await q.maybeSingle();
+    if (error) throw error;
+    if (!data) return candidate;
+    n += 1;
+    candidate = `${root}-${n}`;
+  }
+  throw new Error("Could not find unique slug");
 }
 
 export async function loadCategories(force = false): Promise<AdminCategory[]> {
@@ -52,12 +75,10 @@ export async function loadCategories(force = false): Promise<AdminCategory[]> {
       .order("sort_order", { ascending: true });
 
     if (error) {
-      console.error("categories load error", error);
+      reportError("Load categories", error);
       CACHE = [];
     } else {
       CACHE = ((data ?? []) as Row[]).map(rowToCategory);
-
-      // Compute product counts
       const { data: products } = await supabase.from("products").select("category_name");
       if (products) {
         const counts = new Map<string, number>();
@@ -88,18 +109,21 @@ export async function toggleCategory(id: string): Promise<void> {
   if (!c) return;
   const { error } = await supabase
     .from("categories")
-    .update({ is_visible: !c.is_visible })  // ← was !c.active
+    .update({ is_visible: !c.is_visible })
     .eq("id", id);
-  if (error) { console.error(error); return; }
+  if (error) { reportError("Toggle category", error); return; }
+  toast.success(c.is_visible ? "Category hidden" : "Category visible");
   await loadCategories(true);
 }
 
 export async function reorderCategories(orderedIds: string[]): Promise<void> {
-  await Promise.all(
+  const results = await Promise.all(
     orderedIds.map((id, idx) =>
       supabase.from("categories").update({ sort_order: idx + 1 }).eq("id", id),
     ),
   );
+  const firstErr = results.find((r) => r.error)?.error;
+  if (firstErr) { reportError("Reorder categories", firstErr); return; }
   await loadCategories(true);
 }
 
@@ -115,36 +139,40 @@ type CategoryInput = {
 };
 
 export async function upsertCategory(input: CategoryInput): Promise<void> {
-  const payload = {
-    name: input.name,
-    name_telugu: input.name_telugu,   // ← was input.telugu (undefined)
-    slug: input.slug,
-    parent_id: input.parent_id,
-    is_visible: input.is_visible,     // ← was input.active (undefined)
-    icon: input.icon,
-    icon_url: input.icon_url,
-  };
+  try {
+    const slug = await findUniqueSlug(input.slug || input.name, input.id);
+    const payload = {
+      name: input.name,
+      name_telugu: input.name_telugu,
+      slug,
+      parent_id: input.parent_id,
+      is_visible: input.is_visible,
+      icon: input.icon,
+      icon_url: input.icon_url,
+    };
 
-  if (input.id) {
-    const { error } = await supabase
-      .from("categories")
-      .update(payload)
-      .eq("id", input.id);
-    if (error) { console.error(error); return; }
-  } else {
-    const nextSort = (CACHE[CACHE.length - 1]?.sort_order ?? 0) + 1;
-    const { error } = await supabase
-      .from("categories")
-      .insert({ ...payload, sort_order: nextSort });
-    if (error) { console.error(error); return; }
+    if (input.id) {
+      const { error } = await supabase.from("categories").update(payload).eq("id", input.id);
+      if (error) throw error;
+      toast.success("Category saved");
+    } else {
+      const nextSort = (CACHE[CACHE.length - 1]?.sort_order ?? 0) + 1;
+      const { error } = await supabase
+        .from("categories")
+        .insert({ ...payload, sort_order: nextSort });
+      if (error) throw error;
+      toast.success("Category created");
+    }
+    await loadCategories(true);
+  } catch (e) {
+    reportError("Save category", e);
   }
-
-  await loadCategories(true);
 }
 
 export async function deleteCategory(id: string): Promise<void> {
   await supabase.from("categories").update({ parent_id: null }).eq("parent_id", id);
   const { error } = await supabase.from("categories").delete().eq("id", id);
-  if (error) { console.error(error); return; }
+  if (error) { reportError("Delete category", error); return; }
+  toast.success("Category deleted");
   await loadCategories(true);
 }

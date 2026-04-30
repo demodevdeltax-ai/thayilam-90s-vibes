@@ -1,8 +1,8 @@
 // Supabase-backed notifications log
 import { useEffect, useSyncExternalStore } from "react";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { NotifAudience, NotifChannel, SentNotification } from "./admin-data";
-import { logDbError } from "./db-compat";
 
 let CACHE: SentNotification[] = [];
 let LOADED = false;
@@ -11,6 +11,12 @@ let LOADING: Promise<void> | null = null;
 const listeners = new Set<() => void>();
 const subscribe = (l: () => void) => { listeners.add(l); return () => listeners.delete(l); };
 const emit = () => listeners.forEach((l) => l());
+
+function reportError(scope: string, error: unknown) {
+  const msg = (error as { message?: string } | null)?.message ?? String(error);
+  console.error(`[${scope}]`, error);
+  toast.error(`${scope} failed`, { description: msg });
+}
 
 export async function loadNotifications(force = false): Promise<SentNotification[]> {
   if (LOADED && !force) return CACHE;
@@ -21,7 +27,7 @@ export async function loadNotifications(force = false): Promise<SentNotification
       .select("id,channel,title,body,audience,recipients,sent_at")
       .order("sent_at", { ascending: false })
       .limit(100);
-    if (error) { logDbError("notifications", error); CACHE = []; }
+    if (error) { reportError("Load notifications", error); CACHE = []; }
     else {
       CACHE = (data ?? []).map((r): SentNotification => ({
         id: r.id,
@@ -61,6 +67,7 @@ export async function sendNotification(input: {
     recipients: input.recipients,
     sent_by: u.user?.id ?? null,
   }]);
-  if (error) throw error;
+  if (error) { reportError("Send notification", error); return; }
+  toast.success("Notification sent");
   await loadNotifications(true);
 }

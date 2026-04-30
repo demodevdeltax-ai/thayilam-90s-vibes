@@ -1,8 +1,8 @@
 // Supabase-backed banners store
 import { useEffect, useSyncExternalStore } from "react";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Banner } from "./admin-data";
-import { isMissingColumn, logDbError } from "./db-compat";
 
 let CACHE: Banner[] = [];
 let LOADED = false;
@@ -26,6 +26,12 @@ type Row = {
   sort_order: number;
 };
 
+function reportError(scope: string, error: unknown) {
+  const msg = (error as { message?: string } | null)?.message ?? String(error);
+  console.error(`[${scope}]`, error);
+  toast.error(`${scope} failed`, { description: msg });
+}
+
 function rowToBanner(r: Row): Banner {
   return {
     id: r.id,
@@ -46,21 +52,11 @@ export async function loadBanners(force = false): Promise<Banner[]> {
   if (LOADED && !force) return CACHE;
   if (LOADING && !force) { await LOADING; return CACHE; }
   LOADING = (async () => {
-    const primary = await supabase
+    const { data, error } = await supabase
       .from("banners")
       .select("id,title,subtitle,cta,image_url,link_url,placement,is_active,active_from,active_until,sort_order")
       .order("sort_order", { ascending: true });
-    let data: unknown = primary.data;
-    let error = primary.error;
-    if (isMissingColumn(error, "subtitle") || isMissingColumn(error, "cta") || isMissingColumn(error, "placement")) {
-      const fallback = await supabase
-        .from("banners")
-        .select("id,title,image_url,link_url,is_active,active_from,active_until,sort_order")
-        .order("sort_order", { ascending: true });
-      data = fallback.data;
-      error = fallback.error;
-    }
-    if (error) { logDbError("banners", error); CACHE = []; }
+    if (error) { reportError("Load banners", error); CACHE = []; }
     else CACHE = ((data ?? []) as unknown as Row[]).map(rowToBanner);
     LOADED = true;
     LOADING = null;
@@ -80,7 +76,8 @@ export async function toggleBanner(id: string): Promise<void> {
   const b = CACHE.find((x) => x.id === id);
   if (!b) return;
   const { error } = await supabase.from("banners").update({ is_active: !b.active }).eq("id", id);
-  if (error) throw error;
+  if (error) { reportError("Toggle banner", error); return; }
+  toast.success(b.active ? "Banner hidden" : "Banner activated");
   await loadBanners(true);
 }
 
@@ -100,17 +97,20 @@ export async function upsertBanner(input: BannerInput): Promise<void> {
     sort_order: input.sortOrder ?? CACHE.length + 1,
   };
   if (input.id) {
-    const { error } = await supabase.from("banners").update(payload as never).eq("id", input.id);
-    if (error) throw error;
+    const { error } = await supabase.from("banners").update(payload).eq("id", input.id);
+    if (error) { reportError("Save banner", error); return; }
+    toast.success("Banner saved");
   } else {
-    const { error } = await supabase.from("banners").insert(payload as never);
-    if (error) throw error;
+    const { error } = await supabase.from("banners").insert(payload);
+    if (error) { reportError("Create banner", error); return; }
+    toast.success("Banner created");
   }
   await loadBanners(true);
 }
 
 export async function deleteBanner(id: string): Promise<void> {
   const { error } = await supabase.from("banners").delete().eq("id", id);
-  if (error) throw error;
+  if (error) { reportError("Delete banner", error); return; }
+  toast.success("Banner deleted");
   await loadBanners(true);
 }
