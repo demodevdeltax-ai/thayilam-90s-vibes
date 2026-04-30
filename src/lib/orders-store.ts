@@ -32,6 +32,7 @@ type OrderRow = {
   courier: string | null;
   tracking: string | null;
   order_items: {
+    order_id?: string;
     product_id: string | null;
     product_name: string;
     weight: string;
@@ -68,13 +69,29 @@ export async function loadOrders(force = false): Promise<Order[]> {
   if (LOADED && !force) return CACHE;
   if (LOADING && !force) { await LOADING; return CACHE; }
   LOADING = (async () => {
-    const { data, error } = await supabase
+    const [{ data: orders, error }, { data: items, error: itemsError }] = await Promise.all([
+      supabase
       .from("orders")
-      .select("*, order_items(product_id,product_name,weight,qty,unit_price)")
-      .order("placed_at", { ascending: false });
+      .select("id,order_number,user_id,status,subtotal,discount,shipping,total,ship_name,ship_phone,ship_line,ship_city,ship_state,ship_pincode,placed_at,courier,tracking")
+      .order("placed_at", { ascending: false }),
+      supabase
+        .from("order_items")
+        .select("order_id,product_id,product_name,weight,qty,unit_price"),
+    ]);
     if (error) { logDbError("orders", error); CACHE = []; }
+    else if (itemsError) { logDbError("order_items", itemsError); CACHE = []; }
     else {
-      const rows = (data ?? []) as unknown as OrderRow[];
+      const byOrderId = new Map<string, OrderRow["order_items"]>();
+      ((items ?? []) as unknown as OrderRow["order_items"]).forEach((i) => {
+        if (!i.order_id) return;
+        const list = byOrderId.get(i.order_id) ?? [];
+        list.push(i);
+        byOrderId.set(i.order_id, list);
+      });
+      const rows = ((orders ?? []) as unknown as Omit<OrderRow, "order_items">[]).map((r) => ({
+        ...r,
+        order_items: byOrderId.get(r.id) ?? [],
+      }));
       NUMBER_TO_ID.clear();
       rows.forEach((r) => NUMBER_TO_ID.set(r.order_number, r.id));
       CACHE = rows.map(rowToOrder);
