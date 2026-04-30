@@ -89,7 +89,6 @@ export async function toggleFlag(productId: string): Promise<void> {
   const cur = FLAGGED_CACHE.has(productId);
   const { error } = await supabase.from("products").update({ is_flagged: !cur }).eq("id", productId);
   if (error) throw error;
-  A: void 0;
   await loadProducts(true);
 }
 
@@ -107,9 +106,12 @@ export async function loadProducts(force = false): Promise<Product[]> {
     if (error) {
       console.error("[products] load failed:", error);
       CACHE = [];
+      RAW_ROWS = [];
     } else {
-      CACHE = (data ?? []).map(rowToProduct);
+      RAW_ROWS = (data ?? []) as Row[];
+      CACHE = RAW_ROWS.map(rowToProduct);
     }
+    rebuildModerationCaches();
     LOADED = true;
     LOADING = null;
     emit();
