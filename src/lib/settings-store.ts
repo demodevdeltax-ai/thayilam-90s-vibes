@@ -1,6 +1,7 @@
 // Supabase-backed platform settings (singleton row).
 import { useEffect, useSyncExternalStore } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { logDbError } from "./db-compat";
 
 export type PlatformSettings = {
   platformName: string;
@@ -36,7 +37,12 @@ export async function loadSettings(force = false): Promise<PlatformSettings> {
   if (LOADED && !force) return CACHE;
   if (LOADING && !force) { await LOADING; return CACHE; }
   LOADING = (async () => {
-    const { data } = await supabase.from("platform_settings").select("*").limit(1).maybeSingle();
+    const { data, error } = await supabase
+      .from("platform_settings")
+      .select("platform_name,support_email,default_commission,min_payout,free_ship_threshold,two_factor,auto_approve_vendors,public_catalog")
+      .limit(1)
+      .maybeSingle();
+    if (error) logDbError("settings", error);
     if (data) {
       CACHE = {
         platformName: data.platform_name,
