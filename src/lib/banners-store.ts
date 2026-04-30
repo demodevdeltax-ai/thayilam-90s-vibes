@@ -2,7 +2,7 @@
 import { useEffect, useSyncExternalStore } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Banner } from "./admin-data";
-import { logDbError } from "./db-compat";
+import { isMissingColumn, logDbError } from "./db-compat";
 
 let CACHE: Banner[] = [];
 let LOADED = false;
@@ -46,10 +46,20 @@ export async function loadBanners(force = false): Promise<Banner[]> {
   if (LOADED && !force) return CACHE;
   if (LOADING && !force) { await LOADING; return CACHE; }
   LOADING = (async () => {
-    const { data, error } = await supabase
+    const primary = await supabase
       .from("banners")
       .select("id,title,subtitle,cta,image_url,link_url,placement,is_active,active_from,active_until,sort_order")
       .order("sort_order", { ascending: true });
+    let data: unknown = primary.data;
+    let error = primary.error;
+    if (isMissingColumn(error, "subtitle") || isMissingColumn(error, "cta") || isMissingColumn(error, "placement")) {
+      const fallback = await supabase
+        .from("banners")
+        .select("id,title,image_url,link_url,is_active,active_from,active_until,sort_order")
+        .order("sort_order", { ascending: true });
+      data = fallback.data;
+      error = fallback.error;
+    }
     if (error) { logDbError("banners", error); CACHE = []; }
     else CACHE = ((data ?? []) as unknown as Row[]).map(rowToBanner);
     LOADED = true;
