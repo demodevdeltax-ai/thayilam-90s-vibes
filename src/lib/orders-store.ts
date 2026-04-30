@@ -3,6 +3,7 @@ import { useEffect, useSyncExternalStore } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Order, OrderItem, OrderStatus } from "./vendor-data";
 import type { Weight } from "./products";
+import { logDbError } from "./db-compat";
 
 let CACHE: Order[] = [];
 let LOADED = false;
@@ -71,7 +72,7 @@ export async function loadOrders(force = false): Promise<Order[]> {
       .from("orders")
       .select("*, order_items(product_id,product_name,weight,qty,unit_price)")
       .order("placed_at", { ascending: false });
-    if (error) { console.error("[orders] load failed:", error); CACHE = []; }
+    if (error) { logDbError("orders", error); CACHE = []; }
     else {
       const rows = (data ?? []) as unknown as OrderRow[];
       NUMBER_TO_ID.clear();
@@ -95,6 +96,7 @@ export function useOrders(): Order[] {
 export async function setOrderStatus(orderNumber: string, status: OrderStatus): Promise<void> {
   const id = NUMBER_TO_ID.get(orderNumber);
   if (!id) return;
-  await supabase.from("orders").update({ status }).eq("id", id);
+  const { error } = await supabase.from("orders").update({ status }).eq("id", id);
+  if (error) throw error;
   await loadOrders(true);
 }
