@@ -1,8 +1,8 @@
 import { Link } from "@/lib/router-compat";
 import { Helmet } from "react-helmet-async";
 import {
-  Package, ShoppingCart, TrendingUp, AlertTriangle,
-  ArrowRight, Flag, CreditCard,
+  ShoppingCart, TrendingUp, AlertTriangle,
+  ArrowRight, Flag,
 } from "lucide-react";
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
@@ -10,13 +10,8 @@ import {
 import {
   AdminPageHeader, AdminCard, AdminMetric, AdminBadge, rupee, rupeeShort,
 } from "@/components/admin/ui";
-import {
-  ORDERS_BY_DAY, platformGMVThisMonth, ordersToday, pendingApprovalsCount,
-  topSellingProducts, FAILED_PAYMENTS,
-} from "@/lib/admin-data";
-import { useApprovals } from "@/lib/admin-store";
-import { PRODUCTS } from "@/lib/products";
-
+import { useAllProducts, useApprovals, useFlagged } from "@/lib/products-store";
+import { useAnalytics } from "@/lib/analytics-store";
 
 function RouteHead() {
   return (
@@ -28,17 +23,19 @@ function RouteHead() {
 
 export default DashboardPage;
 
-
 function DashboardPage() {
+  const products = useAllProducts();
   const approvals = useApprovals();
-  const pending = pendingApprovalsCount();
-  const flaggedIds = Object.entries(approvals).filter(([, s]) => s === "Pending").map(([id]) => id);
-  const flaggedProducts = PRODUCTS.filter((p) => flaggedIds.includes(p.id)).slice(0, 4);
+  const flagged = useFlagged();
+  const analytics = useAnalytics();
 
-  const top = topSellingProducts(8);
-  const gmv = platformGMVThisMonth();
+  const pending = Object.values(approvals).filter((s) => s === "Pending").length;
+  const flaggedProducts = products.filter((p) => flagged.has(p.id)).slice(0, 4);
+  const pendingProducts = products
+    .filter((p) => approvals[p.id] === "Pending")
+    .slice(0, 4);
 
-  const chartData = ORDERS_BY_DAY.map((d) => ({
+  const chartData = analytics.ordersByDay.map((d) => ({
     date: d.date.slice(5),
     orders: d.orders,
   }));
@@ -46,17 +43,15 @@ function DashboardPage() {
   return (
     <>
       <RouteHead />
-      <>
       <AdminPageHeader
         title="Platform overview"
         subtitle="Live snapshot of products and orders across Thayilam."
       />
 
-      {/* Metrics */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-        <AdminMetric label="Total products" value={PRODUCTS.length} hint="across 7 categories" />
-        <AdminMetric label="Orders today" value={ordersToday()} hint="last 24h" tone="rust" />
-        <AdminMetric label="Platform GMV (mo)" value={rupeeShort(gmv)} hint="this month" tone="olive" />
+        <AdminMetric label="Total products" value={products.length} hint="in catalog" />
+        <AdminMetric label="Orders today" value={analytics.ordersToday} hint="last 24h" tone="rust" />
+        <AdminMetric label="GMV (this month)" value={rupeeShort(analytics.gmvThisMonth)} hint="month to date" tone="olive" />
         <AdminMetric
           label="Pending approvals"
           value={pending}
@@ -70,16 +65,15 @@ function DashboardPage() {
         />
       </div>
 
-      {/* Chart */}
       <AdminCard className="mb-6">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="text-base font-semibold text-slate-900">Orders per day</h2>
-            <p className="text-xs text-slate-500 mt-0.5">Last 30 days</p>
+            <p className="text-xs text-slate-500 mt-0.5">Last 30 days · {analytics.totalOrders30d} orders</p>
           </div>
           <div className="flex items-center gap-2 text-xs text-slate-500">
             <TrendingUp size={14} className="text-emerald-600" />
-            <span className="text-emerald-600 font-medium">+18.4%</span> vs prev 30d
+            <span className="text-emerald-600 font-medium">{rupeeShort(analytics.totalGmv30d)}</span> GMV
           </div>
         </div>
         <div className="h-64 -ml-2">
@@ -104,36 +98,45 @@ function DashboardPage() {
         </div>
       </AdminCard>
 
-      {/* Top products + alerts */}
       <div className="grid lg:grid-cols-2 gap-4 mb-6">
         <AdminCard padding={false}>
           <div className="flex items-center justify-between p-4 border-b border-slate-100">
             <div>
               <h3 className="text-sm font-semibold text-slate-900">Top selling products</h3>
-              <p className="text-xs text-slate-500 mt-0.5">By units sold this month</p>
+              <p className="text-xs text-slate-500 mt-0.5">By revenue, last 30 days</p>
             </div>
             <Link to="/admin/products" className="text-xs text-[#C4541A] hover:underline inline-flex items-center gap-1">
               View all <ArrowRight size={12} />
             </Link>
           </div>
-          <ul>
-            {top.map((p, i) => (
-              <li key={p.id} className="flex items-center gap-3 px-4 py-3 border-b border-slate-100 last:border-0">
-                <div className="text-xs font-mono text-slate-400 w-5">{i + 1}</div>
-                <div className="h-9 w-9 rounded-md bg-slate-100 grid place-items-center overflow-hidden">
-                  <img src={p.img} alt={p.name} className="h-7 w-7 object-contain" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-slate-900 truncate">{p.name}</div>
-                  <div className="text-xs text-slate-500 truncate">{p.vendor}</div>
-                </div>
-                <div className="text-right">
-                  <div className="text-sm font-semibold text-slate-900 tabular-nums">{p.sales}</div>
-                  <div className="text-[11px] text-slate-500 tabular-nums">{rupee(p.revenue)}</div>
-                </div>
-              </li>
-            ))}
-          </ul>
+          {analytics.topProducts.length === 0 ? (
+            <div className="p-8 text-center text-sm text-slate-400 flex flex-col items-center gap-2">
+              <ShoppingCart size={20} className="text-slate-300" />
+              No sales recorded yet.
+            </div>
+          ) : (
+            <ul>
+              {analytics.topProducts.map((p, i) => {
+                const prod = products.find((pp) => pp.id === p.productId);
+                return (
+                  <li key={p.productId || p.name} className="flex items-center gap-3 px-4 py-3 border-b border-slate-100 last:border-0">
+                    <div className="text-xs font-mono text-slate-400 w-5">{i + 1}</div>
+                    <div className="h-9 w-9 rounded-md bg-slate-100 grid place-items-center overflow-hidden">
+                      {prod?.img && <img src={prod.img} alt={p.name} className="h-7 w-7 object-contain" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-slate-900 truncate">{p.name}</div>
+                      <div className="text-xs text-slate-500 truncate">{prod?.category ?? "—"}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm font-semibold text-slate-900 tabular-nums">{p.units}</div>
+                      <div className="text-[11px] text-slate-500 tabular-nums">{rupee(p.revenue)}</div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
         </AdminCard>
 
         <AdminCard padding={false}>
@@ -143,7 +146,7 @@ function DashboardPage() {
               <h3 className="text-sm font-semibold text-slate-900">Needs your attention</h3>
             </div>
             <span className="text-[11px] text-slate-500">
-              {flaggedProducts.length + FAILED_PAYMENTS.length} items
+              {flaggedProducts.length + pendingProducts.length} items
             </span>
           </div>
           <div className="grid sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-slate-100">
@@ -153,26 +156,25 @@ function DashboardPage() {
               count={flaggedProducts.length}
               items={flaggedProducts.map((p) => ({
                 primary: p.name,
-                secondary: `${p.category} · awaiting moderation`,
+                secondary: `${p.category} · awaiting review`,
                 status: "Pending",
               }))}
               cta={{ to: "/admin/products", label: "Moderate products" }}
             />
             <AlertColumn
-              icon={<CreditCard size={14} className="text-rose-500" />}
-              title="Failed payments"
-              count={FAILED_PAYMENTS.length}
-              items={FAILED_PAYMENTS.map((f) => ({
-                primary: `${f.orderId} · ${rupee(f.amount)}`,
-                secondary: `${f.customer} · ${f.reason}`,
-                status: "Cancelled",
+              icon={<AlertTriangle size={14} className="text-amber-500" />}
+              title="Pending approvals"
+              count={pendingProducts.length}
+              items={pendingProducts.map((p) => ({
+                primary: p.name,
+                secondary: `${p.category} · ${rupee(p.price)}`,
+                status: "Pending",
               }))}
-              cta={{ to: "/admin/orders", label: "Open orders" }}
+              cta={{ to: "/admin/products", label: "Review now" }}
             />
           </div>
         </AdminCard>
       </div>
-    </>
     </>
   );
 }

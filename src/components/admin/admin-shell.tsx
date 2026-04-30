@@ -16,7 +16,7 @@ import {
   Ticket,
   Send,
 } from "lucide-react";
-import { pendingApprovalsCount } from "@/lib/admin-data";
+import { useApprovals } from "@/lib/products-store";
 
 type NavItem = { to: string; label: string; Icon: typeof LayoutDashboard; exact?: boolean };
 const NAV: NavItem[] = [
@@ -35,7 +35,8 @@ const NAV: NavItem[] = [
 export function AdminShell() {
   const [open, setOpen] = useState(false);
   const loc = useLocation();
-  const pending = pendingApprovalsCount();
+  const approvals = useApprovals();
+  const pending = Object.values(approvals).filter((s) => s === "Pending").length;
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">

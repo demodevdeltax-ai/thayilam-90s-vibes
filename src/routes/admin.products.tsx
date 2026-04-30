@@ -6,10 +6,9 @@ import {
 } from "@/components/admin/ui";
 import { CATEGORIES } from "@/lib/products";
 import {
-  useApprovals, useFeatured, useFlagged,
-  setApproval, toggleFeatured, toggleFlag,
-} from "@/lib/admin-store";
-import { useAllProducts } from "@/lib/products-store";
+  useAllProducts, useApprovals, useFeatured, useFlagged,
+  setApproval, toggleFeatured, toggleFlag, deleteProduct,
+} from "@/lib/products-store";
 import { PackSizesPill, SkuPill } from "@/components/admin/pack-breakdown";
 import { PackSizeEditor } from "@/components/admin/pack-size-editor";
 import type { Product } from "@/lib/products";
@@ -189,6 +188,11 @@ function ProductsPage() {
                         <Pencil size={14} />
                       </button>
                       <button
+                        onClick={() => {
+                          if (confirm(`Remove “${p.name}” from the catalog?`)) {
+                            void deleteProduct(p.id);
+                          }
+                        }}
                         className="h-7 w-7 grid place-items-center rounded-md hover:bg-rose-50 text-rose-500"
                         title="Remove listing"
                       >
