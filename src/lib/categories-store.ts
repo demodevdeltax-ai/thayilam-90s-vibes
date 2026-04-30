@@ -105,27 +105,34 @@ export async function reorderCategories(orderedIds: string[]): Promise<void> {
 type CategoryInput = Omit<AdminCategory, "id" | "productCount" | "sortOrder"> & { id?: string };
 
 export async function upsertCategory(input: CategoryInput): Promise<void> {
+  const payload = {
+    name: input.name,
+    name_telugu: input.telugu,
+    slug: input.slug,
+    parent_id: input.parentId,
+    is_visible: input.active,
+    icon: input.icon,
+  };
   if (input.id) {
-    const { error } = await supabase.from("categories").update({
-      name: input.name,
-      name_telugu: input.telugu,
-      slug: input.slug,
-      parent_id: input.parentId,
-      is_visible: input.active,
-      icon: input.icon,
-    } as never).eq("id", input.id);
+    let { error } = await supabase.from("categories").update(payload as never).eq("id", input.id);
+    if (isMissingColumn(error, "icon")) {
+      const { icon: _icon, ...withoutIcon } = payload;
+      ({ error } = await supabase.from("categories").update(withoutIcon).eq("id", input.id));
+    }
     if (error) { console.error(error); return; }
   } else {
     const nextSort = (CACHE[CACHE.length - 1]?.sortOrder ?? 0) + 1;
-    const { error } = await supabase.from("categories").insert({
-      name: input.name,
-      name_telugu: input.telugu,
-      slug: input.slug,
-      parent_id: input.parentId,
-      is_visible: input.active,
-      icon: input.icon,
+    let { error } = await supabase.from("categories").insert({
+      ...payload,
       sort_order: nextSort,
     } as never);
+    if (isMissingColumn(error, "icon")) {
+      const { icon: _icon, ...withoutIcon } = payload;
+      ({ error } = await supabase.from("categories").insert({
+        ...withoutIcon,
+        sort_order: nextSort,
+      }));
+    }
     if (error) { console.error(error); return; }
   }
   await loadCategories(true);
