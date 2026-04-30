@@ -2,6 +2,7 @@
 import { useEffect, useSyncExternalStore } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { AdminCategory } from "./admin-data";
+import { isMissingColumn, logDbError } from "./db-compat";
 
 let CACHE: AdminCategory[] = [];
 let LOADED = false;
@@ -19,7 +20,8 @@ type Row = {
   parent_id: string | null;
   sort_order: number;
   is_visible: boolean;
-  icon: string | null;
+  icon?: string | null;
+  icon_url?: string | null;
 };
 
 function rowToCategory(r: Row): AdminCategory {
@@ -40,12 +42,22 @@ export async function loadCategories(force = false): Promise<AdminCategory[]> {
   if (LOADED && !force) return CACHE;
   if (LOADING && !force) { await LOADING; return CACHE; }
   LOADING = (async () => {
-    const { data, error } = await supabase
+    const primary = await supabase
       .from("categories")
       .select("id,name,name_telugu,slug,parent_id,sort_order,is_visible,icon" as never)
       .order("sort_order", { ascending: true });
+    let data: unknown = primary.data;
+    let error = primary.error;
+    if (isMissingColumn(error, "icon")) {
+      const fallback = await supabase
+        .from("categories")
+        .select("id,name,name_telugu,slug,parent_id,sort_order,is_visible")
+        .order("sort_order", { ascending: true });
+      data = fallback.data;
+      error = fallback.error;
+    }
     if (error) {
-      console.error("[categories] load failed:", error);
+      logDbError("categories", error);
       CACHE = [];
     } else {
       CACHE = ((data ?? []) as unknown as Row[]).map(rowToCategory);
@@ -93,27 +105,34 @@ export async function reorderCategories(orderedIds: string[]): Promise<void> {
 type CategoryInput = Omit<AdminCategory, "id" | "productCount" | "sortOrder"> & { id?: string };
 
 export async function upsertCategory(input: CategoryInput): Promise<void> {
+  const payload = {
+    name: input.name,
+    name_telugu: input.telugu,
+    slug: input.slug,
+    parent_id: input.parentId,
+    is_visible: input.active,
+    icon: input.icon,
+  };
   if (input.id) {
-    const { error } = await supabase.from("categories").update({
-      name: input.name,
-      name_telugu: input.telugu,
-      slug: input.slug,
-      parent_id: input.parentId,
-      is_visible: input.active,
-      icon: input.icon,
-    } as never).eq("id", input.id);
+    let { error } = await supabase.from("categories").update(payload as never).eq("id", input.id);
+    if (isMissingColumn(error, "icon")) {
+      const { icon: _icon, ...withoutIcon } = payload;
+      ({ error } = await supabase.from("categories").update(withoutIcon).eq("id", input.id));
+    }
     if (error) { console.error(error); return; }
   } else {
     const nextSort = (CACHE[CACHE.length - 1]?.sortOrder ?? 0) + 1;
-    const { error } = await supabase.from("categories").insert({
-      name: input.name,
-      name_telugu: input.telugu,
-      slug: input.slug,
-      parent_id: input.parentId,
-      is_visible: input.active,
-      icon: input.icon,
+    let { error } = await supabase.from("categories").insert({
+      ...payload,
       sort_order: nextSort,
     } as never);
+    if (isMissingColumn(error, "icon")) {
+      const { icon: _icon, ...withoutIcon } = payload;
+      ({ error } = await supabase.from("categories").insert({
+        ...withoutIcon,
+        sort_order: nextSort,
+      }));
+    }
     if (error) { console.error(error); return; }
   }
   await loadCategories(true);

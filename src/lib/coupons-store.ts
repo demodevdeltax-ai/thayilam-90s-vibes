@@ -2,6 +2,7 @@
 import { useEffect, useSyncExternalStore } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Offer } from "./admin-data";
+import { isMissingColumn, logDbError } from "./db-compat";
 
 let CACHE: Offer[] = [];
 let LOADED = false;
@@ -51,11 +52,21 @@ export async function loadCoupons(force = false): Promise<Offer[]> {
   if (LOADED && !force) return CACHE;
   if (LOADING && !force) { await LOADING; return CACHE; }
   LOADING = (async () => {
-    const { data, error } = await supabase
+    const primary = await supabase
       .from("coupons")
-      .select("*")
+      .select("id,code,description,discount_type,discount_value,min_order_value,max_discount,valid_from,valid_until,usage_count,usage_limit,scope,scope_targets,is_active")
       .order("created_at", { ascending: false });
-    if (error) { console.error("[coupons] load failed:", error); CACHE = []; }
+    let data: unknown = primary.data;
+    let error = primary.error;
+    if (isMissingColumn(error, "scope_targets")) {
+      const fallback = await supabase
+        .from("coupons")
+        .select("id,code,description,discount_type,discount_value,min_order_value,max_discount,valid_from,valid_until,usage_count,usage_limit,scope,is_active")
+        .order("created_at", { ascending: false });
+      data = fallback.data;
+      error = fallback.error;
+    }
+    if (error) { logDbError("coupons", error); CACHE = []; }
     else CACHE = ((data ?? []) as unknown as Row[]).map(rowToOffer);
     LOADED = true;
     LOADING = null;
@@ -74,7 +85,8 @@ export function useOffers(): Offer[] {
 export async function toggleOffer(id: string): Promise<void> {
   const o = CACHE.find((x) => x.id === id);
   if (!o) return;
-  await supabase.from("coupons").update({ is_active: !o.active }).eq("id", id);
+  const { error } = await supabase.from("coupons").update({ is_active: !o.active }).eq("id", id);
+  if (error) throw error;
   await loadCoupons(true);
 }
 
@@ -96,14 +108,25 @@ export async function upsertOffer(input: OfferInput): Promise<void> {
     is_active: input.active,
   };
   if (input.id) {
-    await supabase.from("coupons").update(payload as never).eq("id", input.id);
+    let { error } = await supabase.from("coupons").update(payload as never).eq("id", input.id);
+    if (isMissingColumn(error, "scope_targets")) {
+      const { scope_targets: _scopeTargets, ...withoutScopeTargets } = payload;
+      ({ error } = await supabase.from("coupons").update(withoutScopeTargets as never).eq("id", input.id));
+    }
+    if (error) throw error;
   } else {
-    await supabase.from("coupons").insert(payload as never);
+    let { error } = await supabase.from("coupons").insert(payload as never);
+    if (isMissingColumn(error, "scope_targets")) {
+      const { scope_targets: _scopeTargets, ...withoutScopeTargets } = payload;
+      ({ error } = await supabase.from("coupons").insert(withoutScopeTargets as never));
+    }
+    if (error) throw error;
   }
   await loadCoupons(true);
 }
 
 export async function deleteOffer(id: string): Promise<void> {
-  await supabase.from("coupons").delete().eq("id", id);
+  const { error } = await supabase.from("coupons").delete().eq("id", id);
+  if (error) throw error;
   await loadCoupons(true);
 }
