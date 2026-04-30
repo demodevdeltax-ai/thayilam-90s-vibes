@@ -52,14 +52,14 @@ export async function sendNotification(input: {
   recipients: number;
 }): Promise<void> {
   const { data: u } = await supabase.auth.getUser();
-  const { error } = await supabase.from("notifications").insert({
+  const { error } = await supabase.from("notifications").insert([{
     channel: input.channel,
     title: input.title,
     body: input.body,
-    audience: input.audience as unknown as Record<string, unknown>,
+    audience: input.audience as unknown as never,
     recipients: input.recipients,
     sent_by: u.user?.id ?? null,
-  });
+  }]);
   if (error) throw error;
   await loadNotifications(true);
 }

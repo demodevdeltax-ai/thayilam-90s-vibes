@@ -64,16 +64,17 @@ export function useSettings(): PlatformSettings {
 }
 
 export async function saveSettings(patch: Partial<PlatformSettings>): Promise<void> {
-  const row: Record<string, unknown> = { updated_at: new Date().toISOString() };
-  if (patch.platformName !== undefined) row.platform_name = patch.platformName;
-  if (patch.supportEmail !== undefined) row.support_email = patch.supportEmail;
-  if (patch.defaultCommission !== undefined) row.default_commission = patch.defaultCommission;
-  if (patch.minPayout !== undefined) row.min_payout = patch.minPayout;
-  if (patch.freeShipThreshold !== undefined) row.free_ship_threshold = patch.freeShipThreshold;
-  if (patch.twoFactor !== undefined) row.two_factor = patch.twoFactor;
-  if (patch.autoApproveVendors !== undefined) row.auto_approve_vendors = patch.autoApproveVendors;
-  if (patch.publicCatalog !== undefined) row.public_catalog = patch.publicCatalog;
-
+  const row = {
+    updated_at: new Date().toISOString(),
+    ...(patch.platformName !== undefined && { platform_name: patch.platformName }),
+    ...(patch.supportEmail !== undefined && { support_email: patch.supportEmail }),
+    ...(patch.defaultCommission !== undefined && { default_commission: patch.defaultCommission }),
+    ...(patch.minPayout !== undefined && { min_payout: patch.minPayout }),
+    ...(patch.freeShipThreshold !== undefined && { free_ship_threshold: patch.freeShipThreshold }),
+    ...(patch.twoFactor !== undefined && { two_factor: patch.twoFactor }),
+    ...(patch.autoApproveVendors !== undefined && { auto_approve_vendors: patch.autoApproveVendors }),
+    ...(patch.publicCatalog !== undefined && { public_catalog: patch.publicCatalog }),
+  };
   const { error } = await supabase.from("platform_settings").update(row).eq("singleton", true);
   if (error) throw error;
   await loadSettings(true);
