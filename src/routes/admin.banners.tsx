@@ -119,13 +119,9 @@ function BannersPage() {
                     >
                       <ArrowDown size={13} />
                     </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); toggleBanner(b.id); }}
-                      className="ml-1"
-                      title="Toggle"
-                    >
-                      <Switch checked={b.active} />
-                    </button>
+                    <span onClick={(e) => e.stopPropagation()} className="ml-1 inline-flex">
+                      <Switch checked={b.active} onCheckedChange={() => toggleBanner(b.id)} />
+                    </span>
                     <button
                       onClick={(e) => { e.stopPropagation(); startEdit(b); }}
                       className="h-7 w-7 grid place-items-center rounded-md hover:bg-slate-100 text-slate-500"
