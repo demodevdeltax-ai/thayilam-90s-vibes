@@ -41,6 +41,58 @@ function rowToProduct(r: Row): Product {
   };
 }
 
+// ----- Moderation hooks (approval / featured / flagged) -----
+type ApprovalStatus = "Approved" | "Pending" | "Rejected";
+
+let RAW_ROWS: Row[] = [];
+let APPROVALS_CACHE: Record<string, ApprovalStatus> = {};
+let FEATURED_CACHE: Set<string> = new Set();
+let FLAGGED_CACHE: Set<string> = new Set();
+
+function rebuildModerationCaches() {
+  const a: Record<string, ApprovalStatus> = {};
+  const f = new Set<string>();
+  const g = new Set<string>();
+  for (const r of RAW_ROWS) {
+    const row = r as Row & { approval_status?: string; is_featured?: boolean; is_flagged?: boolean };
+    a[r.id] = (row.approval_status as ApprovalStatus) ?? "Approved";
+    if (row.is_featured) f.add(r.id);
+    if (row.is_flagged) g.add(r.id);
+  }
+  APPROVALS_CACHE = a;
+  FEATURED_CACHE = f;
+  FLAGGED_CACHE = g;
+}
+
+export function useApprovals(): Record<string, ApprovalStatus> {
+  return useSyncExternalStore(subscribe, () => APPROVALS_CACHE, () => APPROVALS_CACHE);
+}
+export function useFeatured(): Set<string> {
+  return useSyncExternalStore(subscribe, () => FEATURED_CACHE, () => FEATURED_CACHE);
+}
+export function useFlagged(): Set<string> {
+  return useSyncExternalStore(subscribe, () => FLAGGED_CACHE, () => FLAGGED_CACHE);
+}
+
+export async function setApproval(productId: string, status: ApprovalStatus): Promise<void> {
+  const { error } = await supabase.from("products").update({ approval_status: status }).eq("id", productId);
+  if (error) throw error;
+  await loadProducts(true);
+}
+export async function toggleFeatured(productId: string): Promise<void> {
+  const cur = FEATURED_CACHE.has(productId);
+  const { error } = await supabase.from("products").update({ is_featured: !cur }).eq("id", productId);
+  if (error) throw error;
+  await loadProducts(true);
+}
+export async function toggleFlag(productId: string): Promise<void> {
+  const cur = FLAGGED_CACHE.has(productId);
+  const { error } = await supabase.from("products").update({ is_flagged: !cur }).eq("id", productId);
+  if (error) throw error;
+  A: void 0;
+  await loadProducts(true);
+}
+
 export async function loadProducts(force = false): Promise<Product[]> {
   if (LOADED && !force) return CACHE;
   if (LOADING && !force) {
