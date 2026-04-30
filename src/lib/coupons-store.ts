@@ -58,10 +58,10 @@ export async function loadCoupons(force = false): Promise<Offer[]> {
       .order("created_at", { ascending: false });
     let data: unknown = primary.data;
     let error = primary.error;
-    if (isMissingColumn(error, "scope_targets")) {
+    if (isMissingColumn(error, "scope_targets") || isMissingColumn(error, "description")) {
       const fallback = await supabase
         .from("coupons")
-        .select("id,code,description,discount_type,discount_value,min_order_value,max_discount,valid_from,valid_until,usage_count,usage_limit,scope,is_active")
+        .select("id,code,discount_type,discount_value,min_order_value,max_discount,valid_from,valid_until,usage_count,usage_limit,scope,is_active")
         .order("created_at", { ascending: false });
       data = fallback.data;
       error = fallback.error;
