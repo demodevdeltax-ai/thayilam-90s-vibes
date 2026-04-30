@@ -4,9 +4,9 @@ import { Search, RotateCcw, ChevronDown, ChevronRight } from "lucide-react";
 import {
   AdminPageHeader, AdminCard, AdminBadge, TableShell, Th, Td, rupee,
 } from "@/components/admin/ui";
-import { ORDERS, type OrderStatus } from "@/lib/vendor-data";
-import { PRODUCTS } from "@/lib/products";
-import { setOrderStatus } from "@/lib/vendor-store";
+import { type OrderStatus } from "@/lib/vendor-data";
+import { useOrders, setOrderStatus } from "@/lib/orders-store";
+import { useAllProducts } from "@/lib/products-store";
 import { OrderItemBreakdown, SkuPill } from "@/components/admin/pack-breakdown";
 
 
@@ -25,18 +25,20 @@ const STATUSES: OrderStatus[] = ["Pending", "Packed", "Shipped", "Delivered", "C
 const PAYMENTS = ["UPI", "Card", "Net Banking", "COD"] as const;
 
 function OrdersPage() {
+  const ordersList = useOrders();
+  const products = useAllProducts();
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<"All" | OrderStatus>("All");
   const [payment, setPayment] = useState<string>("All");
   const [openId, setOpenId] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
-    return ORDERS.filter((o) => {
+    return ordersList.filter((o) => {
       if (status !== "All" && o.status !== status) return false;
       if (q && !o.id.toLowerCase().includes(q.toLowerCase()) && !o.customer.name.toLowerCase().includes(q.toLowerCase())) return false;
       return true;
     });
-  }, [q, status, payment]);
+  }, [ordersList, q, status, payment]);
 
   return (
     <>
@@ -130,7 +132,7 @@ function OrdersPage() {
                             <div className="text-[11px] uppercase tracking-wider text-slate-500 mb-2 font-medium">Items &amp; pack breakdown</div>
                             <ul className="space-y-3">
                               {o.items.map((i, idx) => {
-                                const product = PRODUCTS.find((p) => p.id === i.productId);
+                                const product = products.find((p) => p.id === i.productId);
                                 return (
                                   <li key={idx} className="text-sm border-l-2 border-[#6B7C4A]/30 pl-3">
                                     <div className="flex items-center justify-between gap-2">
