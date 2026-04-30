@@ -34,6 +34,7 @@ export default CouponsPage;
 
 function CouponsPage() {
   const offers = useOffers();
+  const categories = useAdminCategories();
   const [editing, setEditing] = useState<Offer | null>(null);
   const [open, setOpen] = useState(false);
 
@@ -262,18 +263,13 @@ function CouponDialog({
             </Select>
           </div>
           {form.scope === "vendors" && (
-            <div className="col-span-2 border border-slate-200 rounded-md p-3 max-h-44 overflow-y-auto space-y-2">
-              {VENDORS.map((v) => (
-                <label key={v} className="flex items-center gap-2 text-sm cursor-pointer">
-                  <Checkbox checked={form.scopeTargets.includes(v)} onCheckedChange={() => toggleTarget(v)} />
-                  {v}
-                </label>
-              ))}
+            <div className="col-span-2 border border-slate-200 rounded-md p-3 text-xs text-slate-500">
+              Vendor scoping is not yet wired to the catalog. Use “All products” or category scope.
             </div>
           )}
           {form.scope === "categories" && (
             <div className="col-span-2 border border-slate-200 rounded-md p-3 max-h-44 overflow-y-auto space-y-2">
-              {ADMIN_CATEGORIES.map((c) => (
+              {categories.map((c) => (
                 <label key={c.id} className="flex items-center gap-2 text-sm cursor-pointer">
                   <Checkbox checked={form.scopeTargets.includes(c.slug)} onCheckedChange={() => toggleTarget(c.slug)} />
                   <span>{c.icon}</span> {c.name}
