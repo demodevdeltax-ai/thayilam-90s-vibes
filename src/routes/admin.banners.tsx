@@ -2,7 +2,7 @@ import { Helmet } from "react-helmet-async";
 import { useState } from "react";
 import { Plus, Pencil, Trash2, Eye, ArrowUp, ArrowDown, ImageIcon } from "lucide-react";
 import { AdminPageHeader, AdminCard, AdminBadge } from "@/components/admin/ui";
-import { useBanners, toggleBanner, upsertBanner, deleteBanner } from "@/lib/admin-store";
+import { useBanners, toggleBanner, upsertBanner, deleteBanner } from "@/lib/banners-store";
 import type { Banner } from "@/lib/admin-data";
 import { Switch } from "@/components/ui/switch";
 import {

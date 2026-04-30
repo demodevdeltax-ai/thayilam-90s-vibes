@@ -19,11 +19,14 @@ export type Database = {
           active_from: string | null
           active_until: string | null
           created_at: string
+          cta: string | null
           id: string
           image_url: string
           is_active: boolean
           link_url: string | null
+          placement: string
           sort_order: number
+          subtitle: string | null
           title: string
           updated_at: string
         }
@@ -31,11 +34,14 @@ export type Database = {
           active_from?: string | null
           active_until?: string | null
           created_at?: string
+          cta?: string | null
           id?: string
           image_url: string
           is_active?: boolean
           link_url?: string | null
+          placement?: string
           sort_order?: number
+          subtitle?: string | null
           title: string
           updated_at?: string
         }
@@ -43,11 +49,14 @@ export type Database = {
           active_from?: string | null
           active_until?: string | null
           created_at?: string
+          cta?: string | null
           id?: string
           image_url?: string
           is_active?: boolean
           link_url?: string | null
+          placement?: string
           sort_order?: number
+          subtitle?: string | null
           title?: string
           updated_at?: string
         }
@@ -56,6 +65,7 @@ export type Database = {
       categories: {
         Row: {
           created_at: string
+          icon: string | null
           icon_url: string | null
           id: string
           is_visible: boolean
@@ -68,6 +78,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          icon?: string | null
           icon_url?: string | null
           id?: string
           is_visible?: boolean
@@ -80,6 +91,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          icon?: string | null
           icon_url?: string | null
           id?: string
           is_visible?: boolean
@@ -104,6 +116,7 @@ export type Database = {
         Row: {
           code: string
           created_at: string
+          description: string | null
           discount_type: Database["public"]["Enums"]["coupon_type"]
           discount_value: number
           id: string
@@ -112,6 +125,7 @@ export type Database = {
           min_order_value: number
           scope: string
           scope_ref: string | null
+          scope_targets: string[]
           updated_at: string
           usage_count: number
           usage_limit: number | null
@@ -121,6 +135,7 @@ export type Database = {
         Insert: {
           code: string
           created_at?: string
+          description?: string | null
           discount_type: Database["public"]["Enums"]["coupon_type"]
           discount_value: number
           id?: string
@@ -129,6 +144,7 @@ export type Database = {
           min_order_value?: number
           scope?: string
           scope_ref?: string | null
+          scope_targets?: string[]
           updated_at?: string
           usage_count?: number
           usage_limit?: number | null
@@ -138,6 +154,7 @@ export type Database = {
         Update: {
           code?: string
           created_at?: string
+          description?: string | null
           discount_type?: Database["public"]["Enums"]["coupon_type"]
           discount_value?: number
           id?: string
@@ -146,6 +163,7 @@ export type Database = {
           min_order_value?: number
           scope?: string
           scope_ref?: string | null
+          scope_targets?: string[]
           updated_at?: string
           usage_count?: number
           usage_limit?: number | null

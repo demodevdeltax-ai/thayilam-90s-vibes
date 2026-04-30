@@ -5,7 +5,7 @@ import { AdminPageHeader, AdminCard, AdminBadge } from "@/components/admin/ui";
 import {
   useAdminCategories, toggleCategory, reorderCategories,
   upsertCategory, deleteCategory,
-} from "@/lib/admin-store";
+} from "@/lib/categories-store";
 import type { AdminCategory } from "@/lib/admin-data";
 import { Switch } from "@/components/ui/switch";
 import {
