@@ -2,6 +2,7 @@
 import { useEffect, useSyncExternalStore } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { AdminCategory } from "./admin-data";
+import { isMissingColumn, logDbError } from "./db-compat";
 
 let CACHE: AdminCategory[] = [];
 let LOADED = false;
@@ -19,7 +20,8 @@ type Row = {
   parent_id: string | null;
   sort_order: number;
   is_visible: boolean;
-  icon: string | null;
+  icon?: string | null;
+  icon_url?: string | null;
 };
 
 function rowToCategory(r: Row): AdminCategory {
@@ -40,12 +42,20 @@ export async function loadCategories(force = false): Promise<AdminCategory[]> {
   if (LOADED && !force) return CACHE;
   if (LOADING && !force) { await LOADING; return CACHE; }
   LOADING = (async () => {
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from("categories")
       .select("id,name,name_telugu,slug,parent_id,sort_order,is_visible,icon" as never)
       .order("sort_order", { ascending: true });
+    if (isMissingColumn(error, "icon")) {
+      const fallback = await supabase
+        .from("categories")
+        .select("id,name,name_telugu,slug,parent_id,sort_order,is_visible")
+        .order("sort_order", { ascending: true });
+      data = fallback.data;
+      error = fallback.error;
+    }
     if (error) {
-      console.error("[categories] load failed:", error);
+      logDbError("categories", error);
       CACHE = [];
     } else {
       CACHE = ((data ?? []) as unknown as Row[]).map(rowToCategory);
