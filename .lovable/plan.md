@@ -1,96 +1,100 @@
-## Goal
+# Code ⇄ Database Schema Compatibility Analysis
 
-Simplify Thayilam to a single-vendor-style online store:
-- **Customer side:** Landing, Shop, Product Detail, Cart, Checkout — all working as-is.
-- **Admin side:** Manages everything (products, pack sizes, orders, etc.). No separate vendor login.
-- **New core feature:** Each product has a list of *pack sizes* (e.g. 100g, 250g, 1000g) defined by admin. When a customer orders any weight, the backend computes the optimal pack breakdown (e.g. 500g → 2 × 250g) and shows it on the admin order view. Each product also gets an internal SKU code visible only in admin.
+I compared the codebase against your **canonical schema** (the one you pasted) **and** against the **live database** (which has drifted past your canonical schema). Below is a per-table verdict.
 
-## Scope of changes
+## Legend
+- ✅ Code matches both canonical schema and live DB
+- ⚠️ Code uses columns that exist in **live DB only** (not in canonical schema) — runs today, but will break if you re-create DB from canonical SQL
+- ❌ Code uses something that does **not** exist anywhere — runtime error
+- ➖ Canonical column not used by code (harmless)
 
-### 1. Remove vendor portal (kept simple)
+---
 
-- Delete vendor routes from sidebar + remove portal link from header.
-- Files removed: `src/routes/vendor.*.tsx`, `src/components/vendor/*`, `src/lib/vendor-store.ts`, `src/lib/vendor-data.ts`.
-- Update `src/routeTree.gen.ts` references.
+## 1. `profiles` — ✅ Compatible
+Code touches only `id`, `full_name`, `phone`. All present in both.
 
-### 2. Pack-size system (the main new feature)
+## 2. `user_roles` — ✅ Compatible
+Uses `user_id`, `role`. RLS via `has_role()` matches.
 
-Add to product data model (`src/lib/products.ts`):
-```
-packSizes: number[]   // grams admin can pack, e.g. [100, 250, 1000]
-sku: string           // internal product code, admin-only
-```
+## 3. `categories` — ⚠️ Drift between canonical & live
+| Column used in code | Canonical | Live DB | Notes |
+|---|---|---|---|
+| `name`, `name_telugu`, `slug`, `parent_id`, `sort_order`, `is_visible` | ✅ | ✅ | OK |
+| `icon` (text emoji) | ❌ NOT in canonical | ✅ exists in live | `categories-store.ts` already has graceful fallback (`isMissingColumn`) |
+| `icon_url` | ✅ | ✅ | Defined in row type but **never read or written** |
 
-Helper `src/lib/pack-breakdown.ts`:
-- `computeBreakdown(grams, packSizes)` → greedy largest-first algorithm
-  - 500g with [100,250,1000] → `[{size:250, count:2}]`
-  - 750g with [100,250,1000] → `[{size:250, count:3}]`
-  - 1300g with [100,250,1000] → `[{size:1000,count:1},{size:250,count:1},{size:100,count:1}` (with remainder padding when needed)
-- Returns also `totalPacked` and `remainder` (0 if exact).
+**Verdict:** Works on live DB. If you re-apply canonical SQL, the `icon` column disappears → fallback kicks in and emojis silently degrade to `"•"`. **Recommendation:** add `icon text` to canonical schema, or migrate code to use `icon_url` only.
 
-### 3. Customer-side display (unchanged behavior)
+## 4. `products` — ⚠️ Drift
+| Column used in code | Canonical | Live DB |
+|---|---|---|
+| All canonical columns | ✅ | ✅ |
+| `approval_status`, `is_featured`, `is_flagged` | ❌ NOT in canonical | ✅ in live |
 
-- Customer still sees clean weight options on PDP and chooses one (100g / 250g / 500g) — pack breakdown is **never shown** to customer. Only price + weight.
-- Cart line shows weight only.
+`products-store.ts` uses `isMissingColumn` fallbacks for these three, so it degrades gracefully. **Recommendation:** add the moderation columns to canonical schema if you want admin moderation to persist.
 
-### 4. Admin-side additions
+## 5. `banners` — ⚠️ Drift (HIGH RISK if canonical re-applied)
+| Column used in code | Canonical | Live DB |
+|---|---|---|
+| `title`, `image_url`, `link_url`, `sort_order`, `is_active`, `active_from`, `active_until` | ✅ | ✅ |
+| `subtitle`, `cta`, `placement` | ❌ NOT in canonical | ✅ in live |
 
-**Products list (`/admin/products`)** — new column:
-- `SKU` (e.g. `THY-LAD-001`) shown next to product name in the admin table.
+`banners-store.ts` selects `subtitle,cta,placement` **without** any fallback. If the DB is rebuilt from canonical SQL the banners admin page will throw a 400 immediately. **Recommendation:** either add these columns to canonical schema (preferred — admin UI uses them heavily) or add fallback logic.
 
-**Product edit modal/page** — admin can:
-- Set/edit `packSizes` (chip input: add 100, 250, 1000)
-- View auto-generated `sku` (or edit it)
+## 6. `coupons` — ⚠️ Drift
+| Column used in code | Canonical | Live DB |
+|---|---|---|
+| `code`, `discount_type`, `discount_value`, `min_order_value`, `max_discount`, `scope`, `scope_ref`, `usage_limit`, `usage_count`, `is_active`, `valid_from`, `valid_until` | ✅ | ✅ |
+| `description` | ❌ NOT in canonical | ✅ in live |
+| `scope_targets` (text[]) | ❌ NOT in canonical | ✅ in live |
+| `scope_ref` (canonical) | ✅ | ✅ but **never used by code** (code uses `scope_targets` array instead) |
 
-**Orders detail (`/admin/orders` row expansion)** — for each line item show:
-- Customer ordered: `Mysore Pak — 500g`
-- **Pack from store:** `2 × 250g pack` (computed from `computeBreakdown`)
-- Internal SKU + pack-line summary for the picker.
+`coupons-store.ts` has fallback for `scope_targets` only — not for `description`. If `description` is missing the load will 400. **Recommendation:** add `description text` and `scope_targets text[]` to canonical schema, OR drop them from code and use only `scope_ref`.
 
-### 5. Per-product code display
+## 7. `orders` — ✅ Compatible
+All columns the code reads/writes (`order_number`, `user_id`, `status`, `payment_method`, `subtotal`, `discount`, `shipping`, `total`, `coupon_code`, all `ship_*`, `courier`, `tracking`, `placed_at`) match both canonical and live.
 
-In admin product list and product detail views, render an SKU pill (mono font) like `THY-MUR-007`. Auto-generated on creation: `THY-{first 3 letters of category}-{seq}`.
+## 8. `order_items` — ✅ Compatible
+All columns match. Code does two separate fetches (orders, then items) — works without FK relationships.
 
-## Technical details
+## 9. ❌ Tables in code that are **NOT** in your canonical schema
+These exist in the live DB but **not** in the SQL you pasted:
 
-### Files to create
-- `src/lib/pack-breakdown.ts` — pure function + unit-style sanity tests inline.
-- `src/components/admin/pack-size-editor.tsx` — chip-style input.
-- `src/components/admin/order-pack-breakdown.tsx` — renders breakdown rows.
+| Table | Used by | Impact if canonical is re-applied |
+|---|---|---|
+| `notifications` | `src/lib/notifications-store.ts`, `admin.notifications.tsx` | Admin Notifications page **breaks completely** |
+| `platform_settings` | `src/lib/settings-store.ts`, `admin.settings.tsx` | Admin Settings page **breaks completely** |
 
-### Files to modify
-- `src/lib/products.ts` — extend Product type with `packSizes`, `sku`. Backfill all existing products with sensible defaults (snacks: [100,250,500]; ladoos: [100,250,1000]; pickles: [100,250]).
-- `src/routes/admin.products.tsx` — add SKU column, add "Edit pack sizes" action that opens a dialog.
-- `src/routes/admin.orders.tsx` — expand row to show pack breakdown per item.
-- `src/components/admin/admin-shell.tsx` — already has correct nav; just confirm vendor link removed.
-- `src/components/site-header.tsx` — remove vendor portal link.
-- `src/routes/__root.tsx` / vendor route deletions reflected in `routeTree.gen.ts`.
+**Recommendation:** add `notifications` and `platform_settings` table definitions + RLS to your canonical schema, or remove those admin pages.
 
-### Pack breakdown algorithm
-```
-function computeBreakdown(grams, packSizes):
-  sizes = sort packSizes desc
-  result = []
-  remaining = grams
-  for size in sizes:
-    count = floor(remaining / size)
-    if count > 0: result.push({size, count})
-    remaining -= count * size
-  if remaining > 0:
-    // pad with smallest pack
-    smallest = min(packSizes)
-    result.push({size: smallest, count: 1, padded: true})
-  return result
-```
+## 10. Mock/legacy data still referenced (not DB-backed)
+Not a DB mismatch but worth noting — these still come from in-memory mock files:
+- `src/lib/admin-store.ts` — vendors, payouts, **vendor commissions** (your schema has no `vendors` table)
+- `src/lib/vendor-data.ts` / `vendor-store.ts` — same
+- `src/lib/customers-store.ts` — derives customers from `profiles` + `orders` (OK)
+- `admin.products.tsx` filters/displays `p.vendor` (always empty string — `Product.vendor` field is deprecated)
+- `admin.coupons.tsx` has a "Specific vendors" scope option that has no backing table
 
-### What stays unchanged
-- All customer pages (landing, shop, PDP, cart, checkout) keep current look + flow.
-- All other admin pages (vendors page will be repurposed away or kept inert — see note).
+## 11. Storage
+Bucket `product-images` ✅ exists and is public — matches code in `uploadProductImage`.
 
-### Note on `/admin/vendors`
-Since vendors no longer log in, the page becomes a simple "Kitchens / Sources" reference list (read-only). I'll keep it but relabel it; not removed to avoid breaking the sidebar layout. Confirm if you'd rather I delete it entirely.
+---
 
-## Out of scope
-- No real auth (still in-memory). Lovable Cloud auth from earlier conversation is parked unless you ask.
-- No changes to checkout payment logic.
-- No CSV import for pack sizes (manual edit only).
+# Summary of required actions to reach **full** compatibility with your canonical schema
+
+**Option A — recommended: extend canonical schema to match live DB & code**
+Add to your SQL:
+1. `categories.icon text`
+2. `products.approval_status text DEFAULT 'Approved'`, `products.is_featured boolean DEFAULT false`, `products.is_flagged boolean DEFAULT false`
+3. `banners.subtitle text`, `banners.cta text`, `banners.placement text DEFAULT 'Homepage Hero'`
+4. `coupons.description text`, `coupons.scope_targets text[] DEFAULT '{}'`
+5. New table `notifications` (channel, title, body, audience jsonb, recipients int, sent_by uuid, sent_at)
+6. New table `platform_settings` (singleton row with the toggles the Settings page edits)
+
+**Option B — strip features from code**
+Remove banner subtitle/cta/placement, coupon description/scope_targets, product moderation, notifications, settings — and the admin pages that drive them.
+
+**Option C — leave as-is (current state)**
+Live DB already has every column. Everything works **today**. Risk is only if you ever re-create the DB from your canonical SQL — then `banners`, `coupons`, `notifications`, `platform_settings` will break.
+
+Tell me which option you want and I'll implement it.
