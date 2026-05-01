@@ -16,17 +16,17 @@ export type Category =
 export type Product = {
   id: string;
   name: string;
-  telugu: string;
-  category: Category;
+  name_telugu: string;
+  category_name: Category;
   /** Deprecated single-vendor field, kept as empty string for back-compat. */
   vendor: string;
-  weight: Weight;
+  default_weight: Weight;
   price: number;
   mrp?: number;
   diet: Diet[];
   popularity: number; // 0-100
   createdAt: string; // ISO
-  img: string;
+  image_url?: string;
   badge?: string;
   packSizes: number[];
   sku: string;
