@@ -36,13 +36,14 @@ export function Hero() {
           <div className="relative w-full aspect-square max-w-[460px]">
             <div className="absolute inset-0 rounded-full border border-dashed border-brown/30" />
             <div className="absolute inset-8 rounded-full border border-brown/15" />
-            <img
-              src={dabbaImg}
-              alt="A stainless steel tiffin dabba"
-              width={768}
-              height={768}
-              className="relative w-full h-full object-contain p-8 line-art"
-            />
+            <video
+              src="/thayilamfoods.mp4"
+              autoPlay
+              loop
+              muted
+              playsInline
+              className="relative w-full h-full object-cover rounded-full"
+            ></video>
             <span className="absolute top-4 -right-2 paper-sand ink-border-thin rounded-full h-20 w-20 grid place-items-center text-center text-[10px] uppercase tracking-widest text-brown/80 stamp-rotate-r leading-tight">
               hand<br/>rolled<br/>· est ·
             </span>
