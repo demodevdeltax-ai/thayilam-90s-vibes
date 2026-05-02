@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { useCart } from "@/lib/cart";
 import { rupee } from "@/lib/products";
 import { useAuth } from "@/lib/auth";
+import { supabase } from "@/lib/supabase";
 // NOTE: Order submission is mocked locally so the storefront stays functional
 // while the WhatsApp OTP backend is being wired up. Replace with your real
 // order-creation endpoint when ready.
@@ -40,6 +41,21 @@ function RouteHead() {
   );
 }
 
+function mapPayment(pay: string) {
+  switch (pay) {
+    case "upi":
+      return "UPI";
+    case "card":
+      return "Card";
+    case "netbanking":
+      return "NetBanking";
+    case "cod":
+      return "COD";
+    default:
+      return "UPI";
+  }
+}
+
 export default CheckoutPage;
 
 
@@ -55,41 +71,7 @@ type Address = {
   type: "Home" | "Office";
 };
 
-const SAVED_ADDRESSES: Address[] = [
-  {
-    id: "a1",
-    name: "Sundari Iyer",
-    phone: "98400 12345",
-    pincode: "600028",
-    city: "Chennai",
-    state: "Tamil Nadu",
-    line: "12, Bhattad Tower, Luz Church Road, Mylapore",
-    landmark: "Above Saravana Stores",
-    type: "Home",
-  },
-  {
-    id: "a2",
-    name: "Sundari Iyer",
-    phone: "98400 12345",
-    pincode: "560034",
-    city: "Bengaluru",
-    state: "Karnataka",
-    line: "Flat 4B, Indiranagar 1st Stage, 100ft Road",
-    type: "Office",
-  },
-];
 
-// tiny pincode → city/state mock
-const PINCODE_DB: Record<string, { city: string; state: string }> = {
-  "600028": { city: "Chennai", state: "Tamil Nadu" },
-  "600001": { city: "Chennai", state: "Tamil Nadu" },
-  "560001": { city: "Bengaluru", state: "Karnataka" },
-  "560034": { city: "Bengaluru", state: "Karnataka" },
-  "500001": { city: "Hyderabad", state: "Telangana" },
-  "400001": { city: "Mumbai", state: "Maharashtra" },
-  "110001": { city: "New Delhi", state: "Delhi" },
-  "700001": { city: "Kolkata", state: "West Bengal" },
-};
 
 const STEPS = ["Address", "Payment", "Confirm"] as const;
 type Step = (typeof STEPS)[number];
@@ -101,8 +83,8 @@ function CheckoutPage() {
   const [step, setStep] = useState<Step>("Address");
 
   // address
-  const [addresses, setAddresses] = useState<Address[]>(SAVED_ADDRESSES);
-  const [selected, setSelected] = useState<string>(SAVED_ADDRESSES[0]?.id ?? "");
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [selected, setSelected] = useState<string>("");
   const [adding, setAdding] = useState(false);
 
   // payment
@@ -114,6 +96,28 @@ function CheckoutPage() {
 
   const delivery = subtotal >= 999 || subtotal === 0 ? 0 : 49;
   const total = subtotal + delivery;
+
+  useEffect(() => {
+    async function fetchAddresses() {
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from("addresses")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error(error);
+        return;
+      }
+
+      setAddresses(data || []);
+      setSelected(data?.[0]?.id || "");
+    }
+
+    fetchAddresses();
+  }, [user]);
 
   // Require auth
   useEffect(() => {
@@ -133,32 +137,68 @@ function CheckoutPage() {
 
   async function placeOrder() {
     if (!user) {
-      toast.error("Please sign in to place an order");
+      toast.error("Please sign in");
       return;
     }
+
     const address = addresses.find((a) => a.id === selected);
     if (!address) {
-      toast.error("Please choose a delivery address");
+      toast.error("Select address");
       return;
     }
+
     setPlacing(true);
+
     try {
-      // Mock order placement — generates a friendly order number locally.
-      // TODO: Replace with your real order API once WABA + backend are wired.
-      await new Promise((r) => setTimeout(r, 600));
-      const orderNumber = `THY-${Date.now().toString().slice(-6)}`;
-      void user; // user info would be sent to your backend
-      void subtotal;
-      void delivery;
-      void total;
-      void address;
-      void pay;
-      void getProduct;
-      setOrderId(orderNumber);
+      // 1. Create order
+      const { data: order, error } = await supabase
+        .from("orders")
+        .insert({
+          user_id: user.id,
+          subtotal,
+          discount: 0,
+          shipping: delivery,
+          total,
+          payment_method: mapPayment(pay),
+          ship_name: address.name,
+          ship_phone: address.phone,
+          ship_line: address.line,
+          ship_city: address.city,
+          ship_state: address.state,
+          ship_pincode: address.pincode,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // 2. Insert order items
+      const itemsPayload = items.map((item) => {
+        const product = getProduct(item.productId);
+
+        return {
+          order_id: order.id,
+          product_id: item.productId,
+          product_name: product?.name || "Unknown",
+          weight: item.weight,
+          qty: item.qty,
+          unit_price: item.unitPrice,
+        };
+      });
+
+      const { error: itemsError } = await supabase
+        .from("order_items")
+        .insert(itemsPayload);
+
+      if (itemsError) throw itemsError;
+
+      // 3. Success
+      setOrderId(order.order_number); // from DB
       setStep("Confirm");
+
     } catch (err) {
-      console.error("[checkout] placeOrder failed", err);
-      toast.error(err instanceof Error ? err.message : "Could not place order");
+      console.error(err);
+      toast.error("Order failed");
     } finally {
       setPlacing(false);
     }
@@ -195,9 +235,37 @@ function CheckoutPage() {
                   setSelected={setSelected}
                   adding={adding}
                   setAdding={setAdding}
-                  onAdd={(a) => {
-                    setAddresses((p) => [...p, a]);
-                    setSelected(a.id);
+                  onAdd={async (a) => {
+                    if (!user) return;
+
+                    if (addresses.length >= 3) {
+                      toast.error("Maximum 3 addresses allowed");
+                      return;
+                    }
+
+                    const { data, error } = await supabase
+                      .from("addresses")
+                      .insert({
+                        user_id: user.id,
+                        name: a.name,
+                        phone: a.phone,
+                        line: a.line,
+                        city: a.city,
+                        state: a.state,
+                        pincode: a.pincode,
+                        landmark: a.landmark,
+                        type: a.type,
+                      })
+                      .select()
+                      .single();
+
+                    if (error) {
+                      toast.error(error.message);
+                      return;
+                    }
+
+                    setAddresses((prev) => [data, ...prev]);
+                    setSelected(data.id);
                     setAdding(false);
                   }}
                   onNext={() => setStep("Payment")}
@@ -316,12 +384,6 @@ function AddressStep({
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // pincode auto-fill
-  useEffect(() => {
-    const hit = PINCODE_DB[form.pincode];
-    if (hit) setForm((f) => ({ ...f, city: hit.city, state: hit.state }));
-  }, [form.pincode]);
-
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     const parsed = addressSchema.safeParse(form);
@@ -378,7 +440,13 @@ function AddressStep({
         })}
 
         <button
-          onClick={() => setAdding(!adding)}
+          onClick={() => {
+            if (addresses.length >= 3) {
+              toast.error("You can only save up to 3 addresses");
+              return;
+            }
+            setAdding(!adding);
+          }}
           className="paper rounded-xl p-4 border-2 border-dashed border-brown/40 hover:border-rust hover:text-rust text-brown/70 grid place-items-center min-h-[140px] transition-colors"
         >
           <div className="text-center">
@@ -794,9 +862,9 @@ function ConfirmStep({
         <Button size="lg" variant="outline" asChild>
           <Link to="/shop">Continue Shopping</Link>
         </Button>
-        <Button size="lg" asChild>
+        {/* <Button size="lg" asChild>
           <a href={`#track-${orderId}`}>Track Order</a>
-        </Button>
+        </Button> */}
       </div>
 
       <div className="mt-8 font-script text-2xl text-brown/70">
@@ -834,7 +902,7 @@ function OrderSummary({ subtotal, delivery, total }: { subtotal: number; deliver
           return (
             <li key={it.id} className="flex items-center gap-3">
               <div className="relative h-12 w-12 rounded-lg paper grid place-items-center shrink-0 ink-border-thin">
-                <img src={p.img} alt="" loading="lazy" className="w-full h-full object-contain p-1.5 line-art" />
+                <img src={p.image_url} alt="" loading="lazy" className="w-full h-full object-contain p-1.5 line-art" />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="text-sm text-brown truncate">{p.name}</div>

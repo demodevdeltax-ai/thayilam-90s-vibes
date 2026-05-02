@@ -21,7 +21,7 @@ export function ProductCard({ p }: { p: Product }) {
   return (
     <article className="paper ink-border-thin rounded-2xl p-4 md:p-5 flex flex-col group hover:-translate-y-1 hover:shadow-[6px_6px_0_var(--brown)] transition-all duration-300 relative">
 
-      <button
+      {/* <button
         onClick={() => setWish((v) => !v)}
         aria-label="Wishlist"
         className={`absolute top-3 right-3 z-10 h-9 w-9 rounded-full grid place-items-center ink-border-thin transition-colors ${
@@ -29,11 +29,11 @@ export function ProductCard({ p }: { p: Product }) {
         }`}
       >
         <Heart size={16} fill={wish ? "currentColor" : "none"} strokeWidth={1.6} />
-      </button>
+      </button> */}
 
-      <div className="relative aspect-square mb-3 rounded-xl overflow-hidden paper-sand grid place-items-center">
+      {/* <div className="relative aspect-square mb-3 rounded-xl overflow-hidden paper-sand grid place-items-center">
 
-        <div className="absolute inset-3 rounded-full border border-dashed border-brown/25" />
+        <div className="absolute inset-3 rounded-full border border-dashed border-brown/25" /> */}
 
         <div className="absolute top-2 left-2 z-10 flex flex-col gap-1.5 items-start">
           <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-olive text-cream font-semibold">
@@ -61,9 +61,7 @@ export function ProductCard({ p }: { p: Product }) {
             className="relative w-full h-full object-contain p-5 line-art group-hover:scale-105 transition-transform duration-500"
           />
         )}
-        console.log("IMAGE URL:", p.image_url);
-
-      </div>
+      {/* </div> */}
 
       <h3 className="font-display text-lg md:text-xl text-brown leading-tight">
         {p.name}
@@ -89,11 +87,6 @@ export function ProductCard({ p }: { p: Product }) {
               </span>
             )}
 
-            {/* {discount > 0 && (
-              <span className="text-[10px] uppercase tracking-wider text-olive font-semibold">
-                -{discount}%
-              </span>
-            )} */}
           </div>
         </div>
 

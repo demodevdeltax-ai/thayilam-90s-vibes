@@ -10,7 +10,7 @@ export function SiteFooter() {
             <div className="font-script text-5xl text-brown leading-none">Thayilam</div>
             <div className="font-script text-brown/60 text-2xl mt-1">a sweet surprise</div>
             <p className="mt-6 text-brown/75 max-w-sm">
-              A small Chennai kitchen, packing a small box of memory and shipping it
+              A small home kitchen, packing a small box of memory and shipping it
               across India since 1994.
             </p>
           </div>
@@ -25,7 +25,7 @@ export function SiteFooter() {
             </ul>
           </div>
 
-          <div>
+          {/* <div>
             <div className="text-[10px] uppercase tracking-widest text-brown/60 mb-3">Stay near</div>
             <p className="text-brown/80 text-sm mb-3">A short letter, once a season. No spam, only sweets.</p>
             <form
@@ -41,7 +41,7 @@ export function SiteFooter() {
                 <SparkIcon size={20} />
               </button>
             </form>
-          </div>
+          </div> */}
         </div>
 
         <div className="dashed-rule my-10" />
@@ -49,11 +49,11 @@ export function SiteFooter() {
         <div className="flex flex-col md:flex-row gap-4 items-center justify-between text-xs text-brown/60">
           <div className="flex items-center gap-2">
             <LeafIcon size={16} className="text-olive" />
-            <span>© {new Date().getFullYear()} Thayilam Sweets. Hand-rolled in Chennai.</span>
+            <span>© {new Date().getFullYear()} Thayilam Sweets. Hand-rolled in out kitchen.</span>
             <FlowerIcon size={16} className="text-rust" />
           </div>
           <div className="uppercase tracking-widest">
-            Made with ghee · No palm oil · No preservatives
+            Made with ghee · authentic ground nut oil · No preservatives
           </div>
         </div>
       </div>

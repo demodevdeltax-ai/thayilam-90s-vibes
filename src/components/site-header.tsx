@@ -19,14 +19,24 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-40 paper border-b border-brown/20 backdrop-blur-[1px]">
       <div className="mx-auto max-w-7xl px-5 md:px-8 h-16 md:h-20 flex items-center justify-between gap-4">
-        <Link to="/" className="flex items-end gap-2 shrink-0">
+      <Link to="/" className="flex items-center gap-2 shrink-0">
+        <img
+          src="/thayilamlogo.png" // 👈 put your logo file in public folder
+          alt="Thayilam"
+          className="h-10 md:h-12 w-auto object-contain"
+        />
+        <span className="hidden md:inline-block font-script text-brown/55 text-sm pb-1">
+          a sweet surprise
+        </span>
+      </Link>
+        {/* <Link to="/" className="flex items-end gap-2 shrink-0">
           <span className="font-script text-3xl md:text-4xl leading-none text-brown">
             Thayilam
           </span>
           <span className="hidden md:inline-block font-script text-brown/55 text-sm pb-1">
             a sweet surprise
           </span>
-        </Link>
+        </Link> */}
 
         <nav className="hidden md:flex items-center gap-9 text-[13px] tracking-[0.18em] uppercase text-brown/85">
           {NAV.map((n) => (

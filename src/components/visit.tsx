@@ -31,9 +31,9 @@ export function Visit() {
 
         <div className="mt-10 grid sm:grid-cols-3 gap-4 max-w-3xl mx-auto">
           {[
-            { icon: LeafIcon, label: "Address", value: "12, Burkit Road,\nT. Nagar, Chennai" },
-            { icon: MangoIcon, label: "Open", value: "Tue – Sun\n10am till the dabba is empty" },
-            { icon: FlowerIcon, label: "Call paati", value: "+91 98 4044 1994" },
+            { icon: LeafIcon, label: "Address", value: "Ayyapa Society\nMadhapur, Hyderabad" },
+            { icon: MangoIcon, label: "Open", value: "Sun – Sat\n Order before 10am to get delivered by next day" },
+            { icon: FlowerIcon, label: "Call Us", value: "+91 85006 76890" },
           ].map(({ icon: Icon, label, value }) => (
             <div key={label} className="paper ink-border-thin rounded-2xl p-5 text-left">
               <Icon size={26} className="text-olive mb-2" />
@@ -44,10 +44,10 @@ export function Visit() {
             </div>
           ))}
         </div>
-
+{/* 
         <div className="mt-12 flex justify-center">
           <Button size="lg" variant="olive">Reserve a tasting</Button>
-        </div>
+        </div> */}
       </div>
     </section>
   );
