@@ -1,83 +1,104 @@
-import { Heart, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useState } from "react";
 import type { Product } from "@/lib/products";
 import { rupee } from "@/lib/products";
 import { useCart } from "@/lib/cart";
 
 export function ProductCard({ p }: { p: Product }) {
-  const [wish, setWish] = useState(false);
   const cart = useCart();
 
   const discount = p.mrp
     ? Math.round(((p.mrp - p.price) / p.mrp) * 100)
     : 0;
 
-  // 🔥 SAFE FIELD MAPPING (handles both old + DB)
-  const image = p.image_url || (p as any).img;
-  const category = p.category_name || (p as any).category;
-  const weight = p.default_weight || (p as any).weight;
-  const telugu = p.name_telugu || (p as any).telugu;
+  const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+
+  /* ---------------- IMAGE ---------------- */
+
+  let image = "/placeholder.jpeg";
+
+  if (p.image_url) {
+    if (p.image_url.startsWith("http")) {
+      image = p.image_url;
+    } else {
+      image = `${SUPABASE_URL}/storage/v1/object/public/product-images/${p.image_url}`;
+    }
+  }
+
+  /* ---------------- CATEGORY (SINGLE SOURCE OF TRUTH) ---------------- */
+
+  function formatSlug(slug?: string) {
+    if (!slug) return "General";
+    return slug
+      .replace(/-/g, " ")
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+  }
+
+  const categorySlug = p.category_slug || "general";
+
+  const categoryLabel =
+    p.category_name?.trim() || formatSlug(categorySlug);
+
+  /* ---------------- OTHER FIELDS ---------------- */
+
+  const weight =
+    p.default_weight?.trim() || (p as any).weight || "";
+
+  const telugu =
+    p.name_telugu?.trim() || (p as any).telugu || "";
+
+  /* ---------------- UI ---------------- */
 
   return (
     <article className="paper ink-border-thin rounded-2xl p-4 md:p-5 flex flex-col group hover:-translate-y-1 hover:shadow-[6px_6px_0_var(--brown)] transition-all duration-300 relative">
+      
+      {/* CATEGORY BADGE (CONNECTED TO FILTER) */}
+      <div className="absolute top-2 left-2 z-10 flex flex-col gap-1.5 items-start">
+        <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-olive text-cream font-semibold">
+          {categoryLabel}
+        </span>
 
-      {/* <button
-        onClick={() => setWish((v) => !v)}
-        aria-label="Wishlist"
-        className={`absolute top-3 right-3 z-10 h-9 w-9 rounded-full grid place-items-center ink-border-thin transition-colors ${
-          wish ? "bg-rust text-cream" : "paper-sand text-brown hover:text-rust"
-        }`}
-      >
-        <Heart size={16} fill={wish ? "currentColor" : "none"} strokeWidth={1.6} />
-      </button> */}
-
-      {/* <div className="relative aspect-square mb-3 rounded-xl overflow-hidden paper-sand grid place-items-center">
-
-        <div className="absolute inset-3 rounded-full border border-dashed border-brown/25" /> */}
-
-        <div className="absolute top-2 left-2 z-10 flex flex-col gap-1.5 items-start">
-          <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-olive text-cream font-semibold">
-            {category}
+        {p.badge && (
+          <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-rust text-cream font-semibold">
+            {p.badge}
           </span>
+        )}
+      </div>
 
-          {p.badge && (
-            <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-rust text-cream font-semibold">
-              {p.badge}
-            </span>
-          )}
-        </div>
-
+      {/* WEIGHT */}
+      {weight && (
         <span className="absolute bottom-2 right-2 z-10 text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full ink-border-thin paper text-brown">
           {weight}
         </span>
+      )}
 
-        {image && (
-          <img
-            src={image}
-            alt={p.name}
-            loading="lazy"
-            width={512}
-            height={512}
-            className="relative w-full h-full object-contain p-5 line-art group-hover:scale-105 transition-transform duration-500"
-          />
-        )}
-      {/* </div> */}
+      {/* IMAGE */}
+      <img
+        src={image}
+        alt={p.name}
+        className="w-[200px] h-[200px] object-cover"
+      />
 
-      <h3 className="font-display text-lg md:text-xl text-brown leading-tight">
+      {/* TITLE */}
+      <h3 className="font-display text-lg md:text-xl text-brown leading-tight mt-2">
         {p.name}
       </h3>
 
-      <div className="text-xs text-brown/55 mt-0.5 mb-3 truncate">
-        {telugu}
-      </div>
+      {/* TELUGU */}
+      {telugu && (
+        <div className="text-xs text-brown/55 mt-0.5 mb-3 truncate">
+          {telugu}
+        </div>
+      )}
 
       <div className="dashed-rule mb-3" />
 
+      {/* PRICE + CTA */}
       <div className="flex items-end justify-between gap-2 mt-auto">
-
-        <div className="min-w-0">
+        
+        <div>
           <div className="flex items-baseline gap-2">
-            <span className="font-script text-2xl text-rust leading-none">
+            <span className="font-script text-2xl text-rust">
               {rupee(p.price)}
             </span>
 
@@ -86,12 +107,11 @@ export function ProductCard({ p }: { p: Product }) {
                 {rupee(p.mrp)}
               </span>
             )}
-
           </div>
         </div>
 
+        {/* ADD TO CART */}
         <button
-          aria-label={`Add ${p.name} to cart`}
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -102,7 +122,6 @@ export function ProductCard({ p }: { p: Product }) {
           <Plus size={14} strokeWidth={2.2} />
           <span className="hidden sm:inline">Add</span>
         </button>
-
       </div>
     </article>
   );
