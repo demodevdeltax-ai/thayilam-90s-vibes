@@ -20,16 +20,15 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { LeafIcon, FlowerIcon } from "@/components/icons";
 import { rupee, type Weight } from "@/lib/products";
-import { useAllProducts, loadProducts, getCachedProduct } from "@/lib/products-store";
 import { useCart } from "@/lib/cart";
+import { supabase } from "@/lib/supabase";
 
 export default ProductDetailPage;
-
 
 const WEIGHTS_AVAILABLE = ["100g", "250g", "500g"] as const;
 type WeightChoice = (typeof WEIGHTS_AVAILABLE)[number];
 
-const WEIGHT_MULT: Record<WeightChoice, number> = {
+const WEIGHT_MULT: Record<string, number> = {
   "100g": 0.45,
   "250g": 1,
   "500g": 1.85,
@@ -50,6 +49,64 @@ const RATING_BREAKDOWN = [
   { stars: 1, count: 1 },
 ];
 
+// ============================================================
+// IMAGE RESOLVER — exact same logic as product-card.tsx
+// Case A: full https:// URL → use as-is
+// Case B: filename/path  → build Supabase Storage URL
+// Case C: null/empty     → placeholder
+// ============================================================
+function resolveImage(image_url?: string | null): string {
+  if (!image_url || image_url.trim() === "") return "/placeholder.jpeg";
+
+  if (image_url.startsWith("http://") || image_url.startsWith("https://")) {
+    return image_url;
+  }
+
+  const base = import.meta.env.VITE_SUPABASE_URL;
+  if (!base) {
+    console.warn("[ProductDetail] VITE_SUPABASE_URL is not set in .env");
+    return "/placeholder.jpeg";
+  }
+
+  return `${base}/storage/v1/object/public/product-images/${image_url}`;
+}
+
+// ============================================================
+// SAFE IMG — falls back to placeholder on load error
+// ============================================================
+function SafeImg({
+  src,
+  alt,
+  className,
+  width,
+  height,
+  style,
+}: {
+  src: string;
+  alt: string;
+  className?: string;
+  width?: number;
+  height?: number;
+  style?: React.CSSProperties;
+}) {
+  return (
+    <img
+      src={src}
+      alt={alt}
+      width={width}
+      height={height}
+      className={className}
+      style={style}
+      onError={(e) => {
+        const t = e.currentTarget;
+        if (!t.src.endsWith("/placeholder.jpeg")) {
+          t.src = "/placeholder.jpeg";
+        }
+      }}
+    />
+  );
+}
+
 function Stars({ value, size = 14 }: { value: number; size?: number }) {
   return (
     <div className="flex items-center gap-0.5 text-rust">
@@ -65,92 +122,185 @@ function Stars({ value, size = 14 }: { value: number; size?: number }) {
   );
 }
 
+// ============================================================
+// ROUTE WRAPPER — fetches data, handles loading/not-found
+// ============================================================
 function ProductDetailPage() {
   const { productId } = useParams<{ productId: string }>();
-  const [loaded, setLoaded] = useState<boolean>(() => !!getCachedProduct(productId));
+  const [product, setProduct] = useState<any | null>(null);
+  const [allProducts, setAllProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    if (!loaded) {
-      loadProducts().then(() => setLoaded(true));
-    }
-  }, [loaded, productId]);
-  const product = getCachedProduct(productId);
+    const load = async () => {
+      setLoading(true);
+
+      const [{ data: prod, error: prodErr }, { data: all, error: allErr }] =
+        await Promise.all([
+          supabase
+            .from("products")
+            .select("*, categories(slug, name)")
+            .eq("id", productId)
+            .eq("is_active", true)
+            .single(),
+          supabase
+            .from("products")
+            .select("*, categories(slug, name)")
+            .eq("is_active", true),
+        ]);
+
+      if (prodErr) console.error("Product fetch error:", prodErr);
+      if (allErr) console.error("All products fetch error:", allErr);
+
+      // Flatten joined category fields onto each product
+      const normalize = (p: any) => ({
+        ...p,
+        category_slug: p.categories?.slug ?? "general",
+        // keep category_name from DB; fall back to joined name
+        category_name: p.category_name ?? p.categories?.name ?? "General",
+      });
+
+      if (prod) setProduct(normalize(prod));
+      if (all) setAllProducts(all.map(normalize));
+
+      setLoading(false);
+    };
+
+    if (productId) load();
+  }, [productId]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen grid place-items-center paper">
+        <p className="font-script text-rust text-4xl">Loading…</p>
+      </div>
+    );
+  }
+
   if (!product) {
     return (
       <div className="min-h-screen grid place-items-center paper">
         <div className="text-center">
-          <h1 className="font-display text-4xl text-brown">
-            {loaded ? "Snack not found" : "Loading…"}
-          </h1>
-          {loaded && (
-            <>
-              <p className="text-brown/70 mt-2">That dabba is empty.</p>
-              <div className="mt-6">
-                <Button asChild><Link to="/shop">Back to shop</Link></Button>
-              </div>
-            </>
-          )}
+          <h1 className="font-display text-4xl text-brown">Snack not found</h1>
+          <p className="text-brown/70 mt-2">That dabba is empty.</p>
+          <div className="mt-6">
+            <Button asChild><Link to="/shop">Back to shop</Link></Button>
+          </div>
         </div>
       </div>
     );
   }
-  return <ProductDetailInner product={product} productId={productId} />;
+
+  return (
+    <ProductDetailInner
+      product={product}
+      allProducts={allProducts}
+      productId={productId}
+    />
+  );
 }
 
-function ProductDetailInner({ product, productId }: { product: ReturnType<typeof getCachedProduct> & {}; productId: string }) {
-  const PRODUCTS = useAllProducts();
+type Variant = {
+  size: number;
+  price: number;
+  mrp: number;
+};
 
+function decodeVariants(highlights: string[] = []): Variant[] {
+  const v = highlights.find((h) => h.startsWith("VARIANTS::"));
+  if (!v) return [];
+
+  try {
+    return JSON.parse(v.replace("VARIANTS::", ""));
+  } catch {
+    return [];
+  }
+}
+
+// ============================================================
+// MAIN DETAIL PAGE
+// ============================================================
+function ProductDetailInner({
+  product,
+  allProducts,
+  productId,
+}: {
+  product: any;
+  allProducts: any[];
+  productId: string;
+}) {
   const [zoomXY, setZoomXY] = useState<{ x: number; y: number } | null>(null);
   const [activeImg, setActiveImg] = useState(0);
-  const [weight, setWeight] = useState<WeightChoice>(
-    (WEIGHTS_AVAILABLE as readonly string[]).includes(product.weight)
-      ? (product.weight as WeightChoice)
-      : "250g",
-  );
+
+  // Use pack_sizes from DB if available, else WEIGHTS_AVAILABLE
+  const availableWeights = useMemo(() => {
+    const sizes = product.pack_sizes;
+
+    if (!sizes || sizes.length === 0) {
+      // fallback if DB empty
+      return ["250g"];
+    }
+
+    // normalize everything to string format like "250g"
+    return sizes.map((s: any) => {
+      if (typeof s === "number") return `${s}g`;
+      if (typeof s === "string") return s.toLowerCase().trim();
+      return "";
+    }).filter(Boolean);
+  }, [product.pack_sizes]);
+
+  const [weight, setWeight] = useState<string>(() => {
+    const sizes = product.pack_sizes;
+
+    if (sizes && sizes.length > 0) {
+      const first = sizes[0];
+      return typeof first === "number" ? `${first}g` : first;
+    }
+
+    return "250g";
+  });
+
   const [qty, setQty] = useState(1);
   const [wished, setWished] = useState(false);
   const cart = useCart();
   const navigate = useNavigate();
 
-  // Build a small gallery from this and a few sibling images
+  // Gallery: product's own image first, then sibling product images
   const gallery = useMemo(() => {
-    const others = PRODUCTS.filter((p) => p.id !== product.id).slice(0, 3).map((p) => p.img);
-    return [product.img, ...others].filter(Boolean);
-  }, [product, PRODUCTS]);
+    return [resolveImage(product.image_url)];
+  }, [product]);
 
-  // Recommendation algorithm:
-  // 1. Score each other product:
-  //    +5 same category, +3 shared diet tag, +2 similar price (within 30%),
-  //    +1 popularity boost (popularity / 100), +2 cross-category bonus
-  //    (so we always surface variety from other categories), -2 same vendor
-  //    (we DO want different makers represented).
-  // 2. Take top 8, then ensure at least 3 different categories in the final
-  //    list of 6 by reshuffling.
+  // Related products scored by category, diet overlap, price proximity
   const related = useMemo(() => {
-    const scored = PRODUCTS.filter((p) => p.id !== product.id).map((p) => {
-      let s = 0;
-      if (p.category === product.category) s += 5;
-      const sharedDiet = p.diet.filter((d) => product.diet.includes(d)).length;
-      s += sharedDiet * 3;
-      const priceDelta = Math.abs(p.price - product.price) / product.price;
-      if (priceDelta < 0.3) s += 2;
-      s += p.popularity / 100;
-      if (p.category !== product.category) s += 2; // cross-category variety bonus
-      return { p, s, cat: p.category };
-    });
+    const scored = allProducts
+      .filter((p) => p.id !== product.id)
+      .map((p) => {
+        let s = 0;
+        if (p.category_slug === product.category_slug) s += 5;
+        const sharedDiet = (p.diet ?? []).filter((d: string) =>
+          (product.diet ?? []).includes(d)
+        ).length;
+        s += sharedDiet * 3;
+        const priceDelta =
+          Math.abs(Number(p.price) - Number(product.price)) /
+          (Number(product.price) || 1);
+        if (priceDelta < 0.3) s += 2;
+        s += (p.popularity ?? 50) / 100;
+        if (p.category_slug !== product.category_slug) s += 2;
+        return { p, s, cat: p.category_slug };
+      });
+
     scored.sort((a, b) => b.s - a.s);
 
-    // Diversify: ensure at least 3 distinct categories among top 6.
     const picked: typeof scored = [];
     const catCount: Record<string, number> = {};
     for (const item of scored) {
       const c = catCount[item.cat] ?? 0;
-      // Cap any single category to 2 picks until we have 6 items.
       if (c >= 2 && picked.length < 6) continue;
       picked.push(item);
       catCount[item.cat] = c + 1;
       if (picked.length === 6) break;
     }
-    // Fallback: top up if we didn't reach 6 due to caps.
     if (picked.length < 6) {
       for (const item of scored) {
         if (picked.length >= 6) break;
@@ -158,35 +308,56 @@ function ProductDetailInner({ product, productId }: { product: ReturnType<typeof
       }
     }
     return picked.map((x) => x.p);
-  }, [product]);
+  }, [product, allProducts]);
 
-  const unitPrice = Math.round(product.price * WEIGHT_MULT[weight]);
-  const unitMrp = product.mrp ? Math.round(product.mrp * WEIGHT_MULT[weight]) : undefined;
+  const multiplier = WEIGHT_MULT[weight] ?? 1;
+
+  const unitPrice = Math.round(Number(product.price || 0) * multiplier);
+
+  const unitMrp = product.mrp
+    ? Math.round(Number(product.mrp || 0) * multiplier)
+    : undefined;
+
   const total = unitPrice * qty;
+
+  const discount =
+    unitMrp && unitMrp > 0
+      ? Math.round(((unitMrp - unitPrice) / unitMrp) * 100)
+      : 0;
 
   const totalReviews = RATING_BREAKDOWN.reduce((s, r) => s + r.count, 0);
   const avgRating =
     RATING_BREAKDOWN.reduce((s, r) => s + r.stars * r.count, 0) / totalReviews;
 
   const productUrl = `https://thayilam-90s-vibes.lovable.app/shop/${productId}`;
+  const categoryDisplay = product.category_name ?? "General";
+
+  // Diet tags formatted for display
+  const dietTags: string[] = product.diet ?? [];
+
+  // Highlights from DB
+  const highlights: string[] = product.highlights ?? [];
+
   return (
     <div className="min-h-screen flex flex-col">
       <Helmet>
         <title>{`${product.name} — Thayilam`}</title>
         <meta
           name="description"
-          content={`${product.name} (${product.telugu}). ${product.weight} pack at ${rupee(product.price)}. Hand-rolled in Chennai, ships within 24 hours.`}
+          content={`${product.name}${product.name_telugu ? ` (${product.name_telugu})` : ""}. ${product.default_weight} pack at ${rupee(Number(product.price))}. Hand-made, ships within 24 hours.`}
         />
         <meta property="og:title" content={`${product.name} — Thayilam`} />
         <meta property="og:type" content="product" />
         <meta property="og:url" content={productUrl} />
-        <meta property="og:image" content={product.img} />
+        <meta property="og:image" content={resolveImage(product.image_url)} />
         <link rel="canonical" href={productUrl} />
       </Helmet>
+
       <SiteHeader />
 
       <main className="flex-1 paper">
-        {/* Breadcrumb */}
+
+        {/* ── BREADCRUMB ── */}
         <div className="border-b border-brown/20">
           <div className="mx-auto max-w-7xl px-5 md:px-8 py-5">
             <nav className="flex items-center gap-2 text-xs text-brown/60 uppercase tracking-widest flex-wrap">
@@ -194,17 +365,22 @@ function ProductDetailInner({ product, productId }: { product: ReturnType<typeof
               <ChevronRight size={12} />
               <Link to="/shop" className="hover:text-rust">Shop</Link>
               <ChevronRight size={12} />
-              <span className="text-brown/80">{product.category}</span>
+              <span className="text-brown/80">{categoryDisplay}</span>
               <ChevronRight size={12} />
               <span className="text-brown">{product.name}</span>
             </nav>
           </div>
         </div>
 
+        {/* ── MAIN GRID ── */}
         <div className="mx-auto max-w-7xl px-5 md:px-8 py-8 md:py-14 grid lg:grid-cols-12 gap-10 lg:gap-14">
-          {/* GALLERY */}
+
+          {/* ── LEFT: GALLERY + TABS ── */}
           <div className="lg:col-span-7">
+
+            {/* Gallery */}
             <div className="grid md:grid-cols-[88px_1fr] gap-4">
+
               {/* Thumbnails */}
               <div className="order-2 md:order-1 flex md:flex-col gap-3">
                 {gallery.map((src, i) => (
@@ -213,14 +389,15 @@ function ProductDetailInner({ product, productId }: { product: ReturnType<typeof
                     onClick={() => setActiveImg(i)}
                     aria-label={`View image ${i + 1}`}
                     className={`relative aspect-square w-20 md:w-full rounded-xl overflow-hidden ink-border-thin paper-sand grid place-items-center transition-all ${
-                      i === activeImg ? "ring-2 ring-rust ring-offset-2 ring-offset-cream" : "hover:-translate-y-0.5"
+                      i === activeImg
+                        ? "ring-2 ring-rust ring-offset-2 ring-offset-cream"
+                        : "hover:-translate-y-0.5"
                     }`}
                   >
-                    <img
+                    <SafeImg
                       src={src}
                       alt=""
-                      loading="lazy"
-                      className="w-full h-full object-contain p-2 line-art"
+                      className="w-full h-full object-cover p-1"
                     />
                   </button>
                 ))}
@@ -237,16 +414,17 @@ function ProductDetailInner({ product, productId }: { product: ReturnType<typeof
                     });
                   }}
                   onMouseLeave={() => setZoomXY(null)}
-                  className="relative aspect-square paper-sand ink-border rounded-3xl overflow-hidden cursor-zoom-in group"
+                  className="relative aspect-square paper-sand ink-border rounded-3xl overflow-hidden cursor-zoom-in"
                 >
-                  <div className="absolute inset-6 rounded-full border border-dashed border-brown/30" />
-                  <div className="absolute inset-12 rounded-full border border-brown/15" />
-                  <img
+                  <div className="absolute inset-6 rounded-full border border-dashed border-brown/30 pointer-events-none" />
+                  <div className="absolute inset-12 rounded-full border border-brown/15 pointer-events-none" />
+
+                  <SafeImg
                     src={gallery[activeImg]}
                     alt={product.name}
                     width={768}
                     height={768}
-                    className="absolute inset-0 w-full h-full object-contain p-12 line-art transition-transform duration-200"
+                    className="absolute inset-0 w-full h-full object-contain p-10 transition-transform duration-200"
                     style={
                       zoomXY
                         ? {
@@ -257,57 +435,75 @@ function ProductDetailInner({ product, productId }: { product: ReturnType<typeof
                     }
                   />
 
-                  {product.badge && (
-                    <span className="absolute top-4 left-4 z-10 text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-full bg-rust text-cream font-semibold">
-                      {product.badge}
-                    </span>
-                  )}
-                  <span className="absolute top-4 right-4 z-10 text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-full bg-olive text-cream font-semibold">
-                    {product.category}
+                  {/* Badges */}
+                  <div className="absolute top-4 left-4 z-10 flex flex-col gap-1.5 items-start">
+                    {product.badge && (
+                      <span className="text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-full bg-rust text-cream font-semibold">
+                        {product.badge}
+                      </span>
+                    )}
+                  </div>
+
+                  <span className="absolute top-4 right-4 z-10 text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-full bg-brown/80 text-cream font-semibold">
+                    {categoryDisplay}
                   </span>
 
-                  {/* handwritten note */}
-                  <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between gap-3 pointer-events-none">
-                    <div className="paper rounded-xl ink-border-thin px-3 py-2 stamp-rotate-l shadow-[3px_3px_0_var(--brown)]">
-                      <div className="font-script text-lg text-brown leading-none">
-                        Amma's recipe
-                      </div>
-                      <div className="text-[10px] uppercase tracking-widest text-brown/60 mt-1">
-                        since 1992 ✦
-                      </div>
+                  {/* Diet tags on image */}
+                  {dietTags.length > 0 && (
+                    <div className="absolute bottom-4 left-4 z-10 flex flex-wrap gap-1">
+                      {dietTags.map((d) => (
+                        <span
+                          key={d}
+                          className="text-[9px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-cream/80 text-olive font-semibold"
+                        >
+                          {d}
+                        </span>
+                      ))}
                     </div>
-                    <FlowerIcon size={28} className="text-olive" />
+                  )}
+
+                  <div className="absolute bottom-4 right-4 pointer-events-none">
+                    <FlowerIcon size={28} className="text-olive/60" />
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Tabs */}
+            {/* ── TABS ── */}
             <Tabs defaultValue="description" className="mt-10">
               <TabsList className="bg-transparent p-0 h-auto flex flex-wrap gap-1 border-b border-brown/30 w-full justify-start rounded-none">
-                {["description", "ingredients", "nutrition", "shipping"].map((t) => (
+                {["description", "shipping"].map((t) => (
                   <TabsTrigger
                     key={t}
                     value={t}
-                    className="capitalize rounded-none border-b-2 border-transparent data-[state=active]:border-rust data-[state=active]:bg-transparent data-[state=active]:text-rust data-[state=active]:shadow-none px-4 py-2.5 text-xs uppercase tracking-widest text-brown/70 hover:text-brown"
+                    className="uppercase tracking-widest text-brown/70 hover:text-brown"
                   >
                     {t}
                   </TabsTrigger>
                 ))}
               </TabsList>
 
-              <TabsContent value="description" className="paper-sand ink-border-thin rounded-2xl p-6 md:p-7 mt-5">
-                <p className="text-brown/85 leading-relaxed whitespace-pre-line">
-                  {product.description}
-                </p>
-                {product.highlights.length > 0 && (
+              {/* Description tab — product.description + product.highlights from DB */}
+              <TabsContent
+                value="description"
+                className="paper-sand ink-border-thin rounded-2xl p-6 md:p-7 mt-5"
+              >
+                {product.description ? (
+                  <p className="text-brown/85 leading-relaxed whitespace-pre-line">
+                    {product.description}
+                  </p>
+                ) : (
+                  <p className="text-brown/50 italic">No description available.</p>
+                )}
+
+                {highlights.length > 0 && (
                   <>
                     <div className="dashed-rule my-5" />
                     <div className="text-[11px] uppercase tracking-[0.25em] text-brown/60 mb-3">
                       What makes it special
                     </div>
                     <ul className="grid sm:grid-cols-2 gap-y-2 gap-x-6 text-sm text-brown/85">
-                      {product.highlights.map((h: string) => (
+                      {highlights.map((h) => (
                         <li key={h} className="flex items-center gap-2">
                           <LeafIcon size={14} className="text-olive shrink-0" />
                           {h}
@@ -318,84 +514,51 @@ function ProductDetailInner({ product, productId }: { product: ReturnType<typeof
                 )}
               </TabsContent>
 
-              <TabsContent value="ingredients" className="paper-sand ink-border-thin rounded-2xl p-6 md:p-7 mt-5">
-                <p className="font-display text-lg text-brown mb-3 italic">Made with:</p>
-                <div className="flex flex-wrap gap-2">
-                  {[
-                    "Rice flour",
-                    "Urad dal",
-                    "A2 ghee",
-                    "Cardamom",
-                    "Curry leaves",
-                    "Hing",
-                    "Sea salt",
-                    "Jaggery",
-                    "Cashew",
-                  ].map((i) => (
-                    <span key={i} className="text-xs uppercase tracking-wider px-3 py-1.5 rounded-full ink-border-thin text-brown bg-cream">
-                      {i}
-                    </span>
-                  ))}
-                </div>
-                <p className="text-xs text-brown/60 mt-5">
-                  Allergens: contains dairy and tree nuts. Made in a kitchen that handles wheat and sesame.
+
+              {/* Shipping tab */}
+              <TabsContent
+                value="shipping"
+                className="paper-sand ink-border-thin rounded-2xl p-6 md:p-7 mt-5 space-y-3 text-sm text-brown/85"
+              >
+                <p>
+                  <span className="font-semibold text-brown">Ships within 24 hours</span> of
+                  order, packed in food-safe brown paper and tied with thread.
                 </p>
-              </TabsContent>
-
-              <TabsContent value="nutrition" className="paper-sand ink-border-thin rounded-2xl p-6 md:p-7 mt-5">
-                <div className="text-xs uppercase tracking-widest text-brown/60 mb-3">
-                  Per 100g serving (approx.)
-                </div>
-                <dl className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                  {[
-                    ["Energy", "498 kcal"],
-                    ["Protein", "8.2 g"],
-                    ["Carbs", "52 g"],
-                    ["Fat", "26 g"],
-                    ["Sugar", "14 g"],
-                    ["Fibre", "3.1 g"],
-                    ["Sodium", "320 mg"],
-                    ["Iron", "1.4 mg"],
-                  ].map(([k, v]) => (
-                    <div key={k} className="paper rounded-xl ink-border-thin p-3 text-center">
-                      <dt className="text-[10px] uppercase tracking-widest text-brown/55">{k}</dt>
-                      <dd className="font-display text-xl text-brown mt-1">{v}</dd>
-                    </div>
-                  ))}
-                </dl>
-              </TabsContent>
-
-              <TabsContent value="shipping" className="paper-sand ink-border-thin rounded-2xl p-6 md:p-7 mt-5 space-y-3 text-sm text-brown/85">
-                <p><span className="font-semibold text-brown">Ships within 24 hours</span> of order, packed in food-safe brown paper and tied with thread.</p>
-                <p>Standard delivery <span className="font-semibold">3–5 working days</span> across India. Free shipping on orders above ₹999.</p>
-                <p>For freshness, we don't ship on Sundays — your dabba rests with us.</p>
+                <p>
+                  Standard delivery{" "}
+                  <span className="font-semibold">3–5 working days</span> across Kukatpally.
+                  Free shipping on orders above ₹999.
+                </p>
+                <p>
+                  For freshness, we don't ship on Sundays — your dabba rests with us.
+                </p>
               </TabsContent>
             </Tabs>
           </div>
 
-          {/* BUY BOX */}
+          {/* ── RIGHT: BUY BOX ── */}
           <div className="lg:col-span-5">
             <div className="lg:sticky lg:top-24">
+
               <div className="text-[11px] tracking-[0.3em] uppercase text-olive mb-2">
-                {product.category} · by {product.vendor}
+                {categoryDisplay}
               </div>
+
               <h1 className="font-script text-rust leading-[0.85] text-6xl md:text-7xl">
                 {product.name}
               </h1>
-              <div className="mt-2 font-display italic text-2xl text-brown/80">
-                {product.telugu}
-              </div>
 
-              <div className="mt-4 flex items-center gap-3">
-                <Stars value={avgRating} size={16} />
-                <span className="text-sm text-brown/75">
-                  {avgRating.toFixed(1)} · {totalReviews} reviews
-                </span>
-              </div>
+              {/* Telugu name from DB */}
+              {product.name_telugu && (
+                <div className="mt-2 font-display italic text-2xl text-brown/80">
+                  {product.name_telugu}
+                </div>
+              )}
 
-              {product.highlights.length > 0 && (
+              {/* Highlight chips from DB */}
+              {highlights.length > 0 && (
                 <div className="mt-4 flex flex-wrap gap-1.5">
-                  {product.highlights.slice(0, 5).map((h: string) => (
+                  {highlights.slice(0, 5).map((h) => (
                     <span
                       key={h}
                       className="text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-full ink-border-thin text-brown bg-cream"
@@ -406,14 +569,28 @@ function ProductDetailInner({ product, productId }: { product: ReturnType<typeof
                 </div>
               )}
 
+              {/* Diet chips from DB */}
+              {dietTags.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {dietTags.map((d) => (
+                    <span
+                      key={d}
+                      className="text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-full bg-olive/15 text-olive font-semibold"
+                    >
+                      {d}
+                    </span>
+                  ))}
+                </div>
+              )}
+
               <div className="dashed-rule my-6" />
 
-              {/* price */}
+              {/* Price — calculated from DB price × weight multiplier */}
               <div className="flex items-baseline gap-3">
                 <span className="font-script text-5xl text-rust leading-none">
                   {rupee(unitPrice)}
                 </span>
-                {unitMrp && (
+                {unitMrp && unitMrp > unitPrice && (
                   <>
                     <span className="text-brown/45 line-through">{rupee(unitMrp)}</span>
                     <span className="text-[11px] uppercase tracking-widest text-olive font-semibold">
@@ -424,13 +601,13 @@ function ProductDetailInner({ product, productId }: { product: ReturnType<typeof
               </div>
               <div className="text-xs text-brown/60 mt-1">Inclusive of all taxes</div>
 
-              {/* weight */}
+              {/* Pack size selector — uses pack_sizes from DB */}
               <div className="mt-6">
                 <div className="text-[11px] uppercase tracking-[0.25em] text-brown/70 mb-2">
                   Pack size
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {WEIGHTS_AVAILABLE.map((w) => {
+                  {availableWeights.map((w: string) => {
                     const active = w === weight;
                     return (
                       <button
@@ -454,7 +631,7 @@ function ProductDetailInner({ product, productId }: { product: ReturnType<typeof
                 </div>
               </div>
 
-              {/* qty + buttons */}
+              {/* Qty + Add to Cart + Buy Now */}
               <div className="mt-6 flex flex-wrap items-stretch gap-3">
                 <div className="flex items-center ink-border-thin rounded-full overflow-hidden bg-cream">
                   <button
@@ -483,6 +660,7 @@ function ProductDetailInner({ product, productId }: { product: ReturnType<typeof
                 >
                   Add to Cart · {rupee(total)}
                 </Button>
+
                 <Button
                   size="lg"
                   variant="outline"
@@ -506,7 +684,8 @@ function ProductDetailInner({ product, productId }: { product: ReturnType<typeof
                 </button>
               </div>
 
-              {/* trust badges */}
+
+              {/* Trust badges */}
               <div className="mt-7 grid grid-cols-3 gap-3">
                 {[
                   { Icon: ShieldCheck, top: "No", bottom: "Preservatives" },
@@ -528,107 +707,44 @@ function ProductDetailInner({ product, productId }: { product: ReturnType<typeof
           </div>
         </div>
 
-        {/* RELATED */}
+        {/* ── RELATED PRODUCTS ── */}
         <section className="border-t border-brown/20 paper-sand">
           <div className="mx-auto max-w-7xl px-5 md:px-8 py-14 md:py-20">
             <div className="flex items-end justify-between mb-8">
               <div>
-                <div className="text-[11px] tracking-[0.3em] uppercase text-olive mb-2">— Picked just for you —</div>
+                <div className="text-[11px] tracking-[0.3em] uppercase text-olive mb-2">
+                  — Picked just for you —
+                </div>
                 <h2 className="font-display text-3xl md:text-4xl text-brown">
                   More from the dabba
                 </h2>
               </div>
-              <Link to="/shop" className="hidden sm:inline text-xs uppercase tracking-widest text-rust hover:underline">
+              <Link
+                to="/shop"
+                className="hidden sm:inline text-xs uppercase tracking-widest text-rust hover:underline"
+              >
                 View all →
               </Link>
             </div>
 
-            <div className="-mx-5 md:-mx-8 px-5 md:px-8 overflow-x-auto scrollbar-none">
-              <div className="grid grid-flow-col auto-cols-[78%] sm:auto-cols-[44%] md:auto-cols-[30%] lg:auto-cols-[23%] gap-5 pb-2">
-                {related.map((p) => (
-                  <Link
-                    key={p.id}
-                    to="/shop/$productId"
-                    params={{ productId: p.id }}
-                    className="block"
-                  >
-                    <ProductCard p={p} />
-                  </Link>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* REVIEWS */}
-        <section className="border-t border-brown/20">
-          <div className="mx-auto max-w-7xl px-5 md:px-8 py-14 md:py-20 grid md:grid-cols-12 gap-10">
-            <aside className="md:col-span-4 paper-sand ink-border-thin rounded-2xl p-6 md:p-7 self-start">
-              <div className="text-[11px] tracking-[0.3em] uppercase text-olive mb-2">
-                — Customer letters —
-              </div>
-              <div className="flex items-end gap-3">
-                <div className="font-script text-rust text-7xl leading-none">
-                  {avgRating.toFixed(1)}
-                </div>
-                <div className="pb-2">
-                  <Stars value={avgRating} size={18} />
-                  <div className="text-xs text-brown/65 mt-1">{totalReviews} reviews</div>
+            {related.length === 0 ? (
+              <p className="text-brown/50 italic">No related products found.</p>
+            ) : (
+              <div className="-mx-5 md:-mx-8 px-5 md:px-8 overflow-x-auto scrollbar-none">
+                <div className="grid grid-flow-col auto-cols-[78%] sm:auto-cols-[44%] md:auto-cols-[30%] lg:auto-cols-[23%] gap-5 pb-2">
+                  {related.map((p) => (
+                    <Link
+                      key={p.id}
+                      to="/shop/$productId"
+                      params={{ productId: p.id }}
+                      className="block"
+                    >
+                      <ProductCard p={p} />
+                    </Link>
+                  ))}
                 </div>
               </div>
-
-              <div className="dashed-rule my-5" />
-
-              <ul className="space-y-2.5">
-                {RATING_BREAKDOWN.map(({ stars, count }) => {
-                  const pct = (count / totalReviews) * 100;
-                  return (
-                    <li key={stars} className="flex items-center gap-3 text-sm text-brown">
-                      <span className="w-3 text-right tabular-nums">{stars}</span>
-                      <Star size={12} fill="currentColor" className="text-rust" />
-                      <div className="flex-1 h-2 rounded-full bg-brown/15 overflow-hidden">
-                        <div className="h-full bg-rust" style={{ width: `${pct}%` }} />
-                      </div>
-                      <span className="w-10 text-right tabular-nums text-xs text-brown/60">
-                        {count}
-                      </span>
-                    </li>
-                  );
-                })}
-              </ul>
-
-              <Button className="w-full mt-6" variant="outline">Write a letter</Button>
-            </aside>
-
-            <div className="md:col-span-8 grid sm:grid-cols-2 gap-5">
-              {REVIEWS.map((r, i) => (
-                <figure
-                  key={r.name}
-                  className="paper ink-border-thin rounded-2xl p-6"
-                  style={{ transform: `rotate(${[-0.6, 0.4, -0.3, 0.5][i]}deg)` }}
-                >
-                  <div className="flex items-center justify-between gap-3 mb-3">
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-full bg-olive text-cream grid place-items-center font-display text-base">
-                        {r.name.charAt(0)}
-                      </div>
-                      <div>
-                        <div className="font-display text-base text-brown leading-tight">
-                          {r.name}
-                        </div>
-                        <div className="text-[10px] uppercase tracking-widest text-brown/55">
-                          {r.city} · {r.date}
-                        </div>
-                      </div>
-                    </div>
-                    <Stars value={r.rating} />
-                  </div>
-                  <blockquote className="font-display italic text-brown leading-relaxed">
-                    "{r.body}"
-                  </blockquote>
-                </figure>
-              ))}
-            </div>
+            )}
           </div>
         </section>
       </main>
@@ -639,8 +755,7 @@ function ProductDetailInner({ product, productId }: { product: ReturnType<typeof
   );
 }
 
-
-// (used by related strip arrows on lg+; kept for future use)
+// kept for future use
 export function _ScrollHint() {
   return <ChevronLeft className="hidden" />;
 }

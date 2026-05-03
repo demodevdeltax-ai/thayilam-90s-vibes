@@ -17,6 +17,7 @@ export type Product = {
   id: string;
   name: string;
   name_telugu: string;
+  category_slug: string;
   category_name: Category;
   /** Deprecated single-vendor field, kept as empty string for back-compat. */
   vendor: string;

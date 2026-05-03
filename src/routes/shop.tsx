@@ -1,7 +1,7 @@
 import { Link } from "@/lib/router-compat";
 import { Helmet } from "react-helmet-async";
 import { useEffect, useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, SlidersHorizontal } from "lucide-react";
+import { SlidersHorizontal } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { WhatsAppFab } from "@/components/whatsapp-fab";
@@ -16,7 +16,7 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { SORT_OPTIONS, type SortOption } from "@/lib/products";
-import { supabase } from "@/lib/supabase"; // ✅ NEW
+import { supabase } from "@/lib/supabase";
 
 function RouteHead() {
   return (
@@ -39,24 +39,29 @@ const DEFAULT_FILTERS: Filters = {
 };
 
 function ShopPage() {
-  const [PRODUCTS, setProducts] = useState<any[]>([]); // ✅ REPLACED
+  const [PRODUCTS, setProducts] = useState<any[]>([]);
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [sort, setSort] = useState<SortOption>("Newest");
   const [page, setPage] = useState(1);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  // ✅ FETCH FROM SUPABASE
+  // ✅ FETCH FROM SUPABASE — join categories to get slug
   useEffect(() => {
     const fetchProducts = async () => {
       const { data, error } = await supabase
         .from("products")
-        .select("*")
+        .select("*, categories(slug)")   // ✅ join to get category slug
         .eq("is_active", true);
 
       if (error) {
         console.error(error);
       } else {
-        setProducts(data || []);
+        // ✅ Flatten category_slug onto each product
+        const normalized = (data || []).map((p) => ({
+          ...p,
+          category_slug: p.categories?.slug ?? "general",
+        }));
+        setProducts(normalized);
       }
     };
 
@@ -65,7 +70,8 @@ function ShopPage() {
 
   const filtered = useMemo(() => {
     const list = PRODUCTS.filter((p) => {
-      if (filters.categories.length && !filters.categories.includes(p.category_name ?? "")) return false;
+      // ✅ FIXED: compare against category_slug (not category_name)
+      if (filters.categories.length && !filters.categories.includes(p.category_slug ?? "general")) return false;
       if (filters.weights.length && !filters.weights.includes(p.default_weight)) return false;
       if (filters.diets.length && !filters.diets.some((d) => (p.diet ?? []).includes(d))) return false;
       if (p.price < filters.price[0] || p.price > filters.price[1]) return false;
