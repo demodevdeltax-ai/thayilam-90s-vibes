@@ -29,6 +29,43 @@ import { toast } from "sonner";
 import packedDabba from "@/assets/illustration-packed-dabba.png";
 
 
+type Variant = {
+  size: number;
+  price: number;
+  mrp: number;
+};
+
+function decodeVariants(highlights: string[] = []): Variant[] {
+  try {
+    const raw = highlights.find((h) => h?.startsWith("VARIANTS::"));
+    if (!raw) return [];
+
+    const parsed = JSON.parse(raw.replace("VARIANTS::", ""));
+    if (!Array.isArray(parsed)) return [];
+
+    return parsed;
+  } catch {
+    return [];
+  }
+}
+
+// 🔥 CORE: validate cart item price from DB
+function getValidatedPrice(product: any, weight: string): number {
+  const variants = decodeVariants(product?.highlights ?? []);
+
+  if (variants.length > 0) {
+    const sizeNum = parseInt(weight);
+    const v =
+      variants.find((x) => x.size === sizeNum) ||
+      variants[0];
+
+    if (v?.price) return Number(v.price);
+  }
+
+  // fallback
+  return Number(product?.price ?? 0);
+}
+
 function RouteHead() {
   return (
     <Helmet>
@@ -94,9 +131,19 @@ function CheckoutPage() {
   const [orderId, setOrderId] = useState<string>("");
   const [placing, setPlacing] = useState(false);
 
-  const delivery = subtotal >= 999 || subtotal === 0 ? 0 : 49;
-  const total = subtotal + delivery;
+  const validatedSubtotal = useMemo(() => {
+    return items.reduce((sum, it) => {
+      const p = getProduct(it.productId);
+      if (!p) return sum;
 
+      const safePrice = getValidatedPrice(p, it.weight);
+
+      return sum + safePrice * it.qty;
+    }, 0);
+  }, [items, getProduct]);
+
+  const delivery = validatedSubtotal >= 999 || validatedSubtotal === 0 ? 0 : 49;
+  const total = validatedSubtotal + delivery;
   useEffect(() => {
     async function fetchAddresses() {
       if (!user) return;
@@ -173,18 +220,30 @@ function CheckoutPage() {
       if (error) throw error;
 
       // 2. Insert order items
-      const itemsPayload = items.map((item) => {
-        const product = getProduct(item.productId);
+      const itemsPayload = await Promise.all(
+        items.map(async (item) => {
+          // 🔥 ALWAYS fetch latest product from DB
+          const { data: freshProduct } = await supabase
+            .from("products")
+            .select("*")
+            .eq("id", item.productId)
+            .single();
 
-        return {
-          order_id: order.id,
-          product_id: item.productId,
-          product_name: product?.name || "Unknown",
-          weight: item.weight,
-          qty: item.qty,
-          unit_price: item.unitPrice,
-        };
-      });
+          const product = freshProduct || getProduct(item.productId);
+
+          // 🔥 VALIDATED PRICE
+          const safePrice = getValidatedPrice(product, item.weight);
+
+          return {
+            order_id: order.id,
+            product_id: item.productId,
+            product_name: product?.name || "Unknown",
+            weight: item.weight,
+            qty: item.qty,
+            unit_price: safePrice,
+          };
+        })
+      );
 
       const { error: itemsError } = await supabase
         .from("order_items")
@@ -899,6 +958,9 @@ function OrderSummary({ subtotal, delivery, total }: { subtotal: number; deliver
         {items.map((it) => {
           const p = getProduct(it.productId);
           if (!p) return null;
+
+          const safePrice = getValidatedPrice(p, it.weight);
+
           return (
             <li key={it.id} className="flex items-center gap-3">
               <div className="relative h-12 w-12 rounded-lg paper grid place-items-center shrink-0 ink-border-thin">
@@ -908,7 +970,8 @@ function OrderSummary({ subtotal, delivery, total }: { subtotal: number; deliver
                 <div className="text-sm text-brown truncate">{p.name}</div>
                 <div className="text-[10px] text-brown/60">{it.weight} · ×{it.qty}</div>
               </div>
-              <div className="text-sm font-medium text-brown">{rupee(it.unitPrice * it.qty)}</div>
+              const safePrice = getValidatedPrice(p, it.weight);
+              <div className="text-sm font-medium text-brown">{rupee(safePrice * it.qty)}</div>
             </li>
           );
         })}

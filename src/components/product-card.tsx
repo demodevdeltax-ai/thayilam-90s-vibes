@@ -76,7 +76,7 @@ export function ProductCard({ p }: { p: Product }) {
       <img
         src={image}
         alt={p.name}
-        className="w-[200px] h-[200px] object-cover"
+        className="w-[200px] h-[200px] object-cover mx-auto"
       />
 
       {/* TITLE */}

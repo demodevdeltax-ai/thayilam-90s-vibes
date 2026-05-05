@@ -9,10 +9,6 @@ export function SiteFooter() {
           <div className="md:col-span-2">
             <div className="font-script text-5xl text-brown leading-none">Thayilam</div>
             <div className="font-script text-brown/60 text-2xl mt-1">a sweet surprise</div>
-            <p className="mt-6 text-brown/75 max-w-sm">
-              A small home kitchen, packing a small box of memory and shipping it
-              across India since 1994.
-            </p>
           </div>
 
           <div>

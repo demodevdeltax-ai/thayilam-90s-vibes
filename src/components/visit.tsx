@@ -24,15 +24,11 @@ export function Visit() {
             half open.
           </span>
         </h2>
-        <p className="mt-6 text-brown/80 max-w-xl mx-auto">
-          Walk in for filter coffee and a piece of mysore pak on the house. Saturdays
-          we host a small <em>kollu</em> tasting at 4pm.
-        </p>
 
         <div className="mt-10 grid sm:grid-cols-3 gap-4 max-w-3xl mx-auto">
           {[
-            { icon: LeafIcon, label: "Address", value: "Ayyapa Society\nMadhapur, Hyderabad" },
-            { icon: MangoIcon, label: "Open", value: "Sun – Sat\n Order before 10am to get delivered by next day" },
+            { icon: LeafIcon, label: "Address", value: "Madhapur, Hyderabad" },
+            { icon: MangoIcon, label: "Open", value: "Sun – Sat\n Order before 12am to get delivered by next day" },
             { icon: FlowerIcon, label: "Call Us", value: "+91 85006 76890" },
           ].map(({ icon: Icon, label, value }) => (
             <div key={label} className="paper ink-border-thin rounded-2xl p-5 text-left">

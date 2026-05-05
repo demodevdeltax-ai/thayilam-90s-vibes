@@ -25,15 +25,50 @@ import { supabase } from "@/lib/supabase";
 
 export default ProductDetailPage;
 
-const WEIGHTS_AVAILABLE = ["100g", "250g", "500g"] as const;
-type WeightChoice = (typeof WEIGHTS_AVAILABLE)[number];
+// ============================================================
+// VARIANT TYPE + DECODER
+// Matches exactly what admin panel encodes as VARIANTS::JSON
+// ============================================================
+// =========================
+// UNIVERSAL DYNAMIC SYSTEM
+// =========================
 
-const WEIGHT_MULT: Record<string, number> = {
-  "100g": 0.45,
-  "250g": 1,
-  "500g": 1.85,
+// 1. Decode variants safely
+type Variant = {
+  size: number;
+  price: number;
+  mrp: number;
 };
 
+function decodeVariants(highlights: string[] = []): Variant[] {
+  try {
+    const raw = highlights.find((h) => h?.startsWith("VARIANTS::"));
+    if (!raw) return [];
+
+    const parsed = JSON.parse(raw.replace("VARIANTS::", ""));
+    if (!Array.isArray(parsed)) return [];
+
+    return parsed.filter(
+      (v) =>
+        v &&
+        typeof v.size === "number" &&
+        typeof v.price === "number" &&
+        typeof v.mrp === "number"
+    );
+  } catch {
+    return [];
+  }
+}
+
+
+
+// 2. Extract variants
+
+
+
+// ============================================================
+// STATIC DATA
+// ============================================================
 const REVIEWS = [
   { name: "Lakshmi R.", city: "Bengaluru", rating: 5, date: "Apr 12, 2025", body: "Wrapped in newspaper and brown thread. Tasted exactly like my Madurai summers. I cried a little." },
   { name: "Mr. Subramaniam", city: "Mylapore", rating: 5, date: "Apr 03, 2025", body: "Sent a box to my son in Boston. He called at 2am to say it tasted like Sunday morning at our old house." },
@@ -156,7 +191,6 @@ function ProductDetailPage() {
       const normalize = (p: any) => ({
         ...p,
         category_slug: p.categories?.slug ?? "general",
-        // keep category_name from DB; fall back to joined name
         category_name: p.category_name ?? p.categories?.name ?? "General",
       });
 
@@ -200,23 +234,6 @@ function ProductDetailPage() {
   );
 }
 
-type Variant = {
-  size: number;
-  price: number;
-  mrp: number;
-};
-
-function decodeVariants(highlights: string[] = []): Variant[] {
-  const v = highlights.find((h) => h.startsWith("VARIANTS::"));
-  if (!v) return [];
-
-  try {
-    return JSON.parse(v.replace("VARIANTS::", ""));
-  } catch {
-    return [];
-  }
-}
-
 // ============================================================
 // MAIN DETAIL PAGE
 // ============================================================
@@ -232,40 +249,74 @@ function ProductDetailInner({
   const [zoomXY, setZoomXY] = useState<{ x: number; y: number } | null>(null);
   const [activeImg, setActiveImg] = useState(0);
 
-  // Use pack_sizes from DB if available, else WEIGHTS_AVAILABLE
-  const availableWeights = useMemo(() => {
-    const sizes = product.pack_sizes;
+  // ── VARIANT SETUP ──────────────────────────────────────────
+  // ── VARIANT SETUP (FINAL FIXED VERSION) ─────────────────────
 
-    if (!sizes || sizes.length === 0) {
-      // fallback if DB empty
-      return ["250g"];
+  const variants = useMemo(
+    () => decodeVariants(product.highlights ?? []),
+    [product.highlights]
+  );
+
+  const availableWeights = useMemo<string[]>(() => {
+    if (variants.length > 0) {
+      return variants.map((v) => `${v.size}g`);
     }
 
-    // normalize everything to string format like "250g"
-    return sizes.map((s: any) => {
-      if (typeof s === "number") return `${s}g`;
-      if (typeof s === "string") return s.toLowerCase().trim();
-      return "";
-    }).filter(Boolean);
-  }, [product.pack_sizes]);
-
-  const [weight, setWeight] = useState<string>(() => {
-    const sizes = product.pack_sizes;
-
-    if (sizes && sizes.length > 0) {
-      const first = sizes[0];
-      return typeof first === "number" ? `${first}g` : first;
+    if (product.pack_sizes?.length) {
+      return product.pack_sizes.map((s: any) =>
+        typeof s === "number" ? `${s}g` : String(s).trim().toLowerCase()
+      );
     }
 
-    return "250g";
-  });
+    return product.default_weight
+      ? [product.default_weight]
+      : ["250g"];
+  }, [variants, product.pack_sizes, product.default_weight]);
+
+  // 🔥 FIX: NEVER initialize from availableWeights directly
+  const [weight, setWeight] = useState<string>("");
+
+  // ✅ Correct initialization
+  useEffect(() => {
+    if (!weight && availableWeights.length > 0) {
+      setWeight(availableWeights[0]);
+    }
+  }, [availableWeights, weight]);
+
+  const selectedVariant = useMemo<Variant | null>(() => {
+    if (!variants.length || !weight) return null;
+
+    const sizeNum = parseInt(weight, 10);
+
+    return variants.find((v) => v.size === sizeNum) || variants[0] || null;
+  }, [variants, weight]);
+
+  const unitPrice: number = selectedVariant
+    ? selectedVariant.price
+    : Number(product.price ?? 0);
+
+  const unitMrp: number | undefined = selectedVariant?.mrp
+    ? selectedVariant.mrp
+    : product.mrp
+    ? Number(product.mrp)
+    : undefined;
+
+  const discount =
+    unitMrp && unitMrp > unitPrice
+      ? Math.round(((unitMrp - unitPrice) / unitMrp) * 100)
+      : 0;
+
+  // ── END VARIANT SETUP ───────────────────────────────────────
+  // ── END VARIANT SETUP ──────────────────────────────────────
 
   const [qty, setQty] = useState(1);
   const [wished, setWished] = useState(false);
   const cart = useCart();
   const navigate = useNavigate();
 
-  // Gallery: product's own image first, then sibling product images
+  const total = unitPrice * qty;
+
+  // Gallery: product's own image first
   const gallery = useMemo(() => {
     return [resolveImage(product.image_url)];
   }, [product]);
@@ -310,21 +361,6 @@ function ProductDetailInner({
     return picked.map((x) => x.p);
   }, [product, allProducts]);
 
-  const multiplier = WEIGHT_MULT[weight] ?? 1;
-
-  const unitPrice = Math.round(Number(product.price || 0) * multiplier);
-
-  const unitMrp = product.mrp
-    ? Math.round(Number(product.mrp || 0) * multiplier)
-    : undefined;
-
-  const total = unitPrice * qty;
-
-  const discount =
-    unitMrp && unitMrp > 0
-      ? Math.round(((unitMrp - unitPrice) / unitMrp) * 100)
-      : 0;
-
   const totalReviews = RATING_BREAKDOWN.reduce((s, r) => s + r.count, 0);
   const avgRating =
     RATING_BREAKDOWN.reduce((s, r) => s + r.stars * r.count, 0) / totalReviews;
@@ -332,11 +368,12 @@ function ProductDetailInner({
   const productUrl = `https://thayilam-90s-vibes.lovable.app/shop/${productId}`;
   const categoryDisplay = product.category_name ?? "General";
 
-  // Diet tags formatted for display
   const dietTags: string[] = product.diet ?? [];
 
-  // Highlights from DB
-  const highlights: string[] = product.highlights ?? [];
+  // Filter out the VARIANTS:: encoding line — never show it in the UI
+  const highlights: string[] = (product.highlights ?? []).filter(
+    (h: string) => !h.startsWith("VARIANTS::")
+  );
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -416,9 +453,6 @@ function ProductDetailInner({
                   onMouseLeave={() => setZoomXY(null)}
                   className="relative aspect-square paper-sand ink-border rounded-3xl overflow-hidden cursor-zoom-in"
                 >
-                  <div className="absolute inset-6 rounded-full border border-dashed border-brown/30 pointer-events-none" />
-                  <div className="absolute inset-12 rounded-full border border-brown/15 pointer-events-none" />
-
                   <SafeImg
                     src={gallery[activeImg]}
                     alt={product.name}
@@ -472,7 +506,7 @@ function ProductDetailInner({
             {/* ── TABS ── */}
             <Tabs defaultValue="description" className="mt-10">
               <TabsList className="bg-transparent p-0 h-auto flex flex-wrap gap-1 border-b border-brown/30 w-full justify-start rounded-none">
-                {["description", "shipping"].map((t) => (
+                {["description"].map((t) => (
                   <TabsTrigger
                     key={t}
                     value={t}
@@ -483,7 +517,7 @@ function ProductDetailInner({
                 ))}
               </TabsList>
 
-              {/* Description tab — product.description + product.highlights from DB */}
+              {/* Description tab — VARIANTS:: line already filtered out of `highlights` */}
               <TabsContent
                 value="description"
                 className="paper-sand ink-border-thin rounded-2xl p-6 md:p-7 mt-5"
@@ -513,26 +547,6 @@ function ProductDetailInner({
                   </>
                 )}
               </TabsContent>
-
-
-              {/* Shipping tab */}
-              <TabsContent
-                value="shipping"
-                className="paper-sand ink-border-thin rounded-2xl p-6 md:p-7 mt-5 space-y-3 text-sm text-brown/85"
-              >
-                <p>
-                  <span className="font-semibold text-brown">Ships within 24 hours</span> of
-                  order, packed in food-safe brown paper and tied with thread.
-                </p>
-                <p>
-                  Standard delivery{" "}
-                  <span className="font-semibold">3–5 working days</span> across Kukatpally.
-                  Free shipping on orders above ₹999.
-                </p>
-                <p>
-                  For freshness, we don't ship on Sundays — your dabba rests with us.
-                </p>
-              </TabsContent>
             </Tabs>
           </div>
 
@@ -548,14 +562,13 @@ function ProductDetailInner({
                 {product.name}
               </h1>
 
-              {/* Telugu name from DB */}
               {product.name_telugu && (
                 <div className="mt-2 font-display italic text-2xl text-brown/80">
                   {product.name_telugu}
                 </div>
               )}
 
-              {/* Highlight chips from DB */}
+              {/* Highlight chips — VARIANTS:: already filtered out */}
               {highlights.length > 0 && (
                 <div className="mt-4 flex flex-wrap gap-1.5">
                   {highlights.slice(0, 5).map((h) => (
@@ -569,7 +582,6 @@ function ProductDetailInner({
                 </div>
               )}
 
-              {/* Diet chips from DB */}
               {dietTags.length > 0 && (
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {dietTags.map((d) => (
@@ -585,7 +597,7 @@ function ProductDetailInner({
 
               <div className="dashed-rule my-6" />
 
-              {/* Price — calculated from DB price × weight multiplier */}
+              {/* ── PRICE — reads from selected variant, not a multiplier ── */}
               <div className="flex items-baseline gap-3">
                 <span className="font-script text-5xl text-rust leading-none">
                   {rupee(unitPrice)}
@@ -601,7 +613,7 @@ function ProductDetailInner({
               </div>
               <div className="text-xs text-brown/60 mt-1">Inclusive of all taxes</div>
 
-              {/* Pack size selector — uses pack_sizes from DB */}
+              {/* ── PACK SIZE SELECTOR ── */}
               <div className="mt-6">
                 <div className="text-[11px] uppercase tracking-[0.25em] text-brown/70 mb-2">
                   Pack size
@@ -609,6 +621,20 @@ function ProductDetailInner({
                 <div className="flex flex-wrap gap-2">
                   {availableWeights.map((w: string) => {
                     const active = w === weight;
+
+                    // Show per-pill discount badge if variants are available
+                    const sizeNum = parseInt(w || "0");
+
+                    const pillVariant =
+                      variants.find((v) => v.size === sizeNum) || null;
+
+                    const pillDiscount =
+                      pillVariant && pillVariant.mrp > pillVariant.price
+                        ? Math.round(
+                            ((pillVariant.mrp - pillVariant.price) / pillVariant.mrp) * 100
+                          )
+                        : 0;
+
                     return (
                       <button
                         key={w}
@@ -619,12 +645,25 @@ function ProductDetailInner({
                             : "text-brown hover:bg-brown/10"
                         }`}
                       >
+                        {/* Active dot */}
                         <span
                           className={`absolute top-1 right-1 h-2 w-2 rounded-full transition-colors ${
                             active ? "bg-rust" : "bg-transparent"
                           }`}
                         />
                         {w}
+                        {/* Discount badge on pill */}
+                        {pillDiscount > 0 && (
+                          <span
+                            className={`absolute -top-2 -right-1 text-[9px] font-semibold px-1.5 py-0.5 rounded-full leading-none ${
+                              active
+                                ? "bg-cream text-brown"
+                                : "bg-rust text-cream"
+                            }`}
+                          >
+                            {pillDiscount}%
+                          </span>
+                        )}
                       </button>
                     );
                   })}
@@ -666,6 +705,10 @@ function ProductDetailInner({
                   variant="outline"
                   className="flex-1 min-w-[120px]"
                   onClick={() => {
+                    if (!weight) return;
+
+                    if (!weight) return;
+
                     cart.add(product.id, weight as Weight, qty, unitPrice);
                     navigate({ to: "/checkout" });
                   }}
@@ -683,7 +726,6 @@ function ProductDetailInner({
                   <Heart size={18} fill={wished ? "currentColor" : "none"} strokeWidth={1.6} />
                 </button>
               </div>
-
 
               {/* Trust badges */}
               <div className="mt-7 grid grid-cols-3 gap-3">

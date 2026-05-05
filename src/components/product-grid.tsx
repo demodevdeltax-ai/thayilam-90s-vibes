@@ -98,7 +98,7 @@ export function ProductGrid({ filters = DEFAULT_FILTERS }: { filters?: Filters }
             </h2>
           </div>
           <p className="md:max-w-sm text-brown/75">
-            Small batches from kitchens we know by name. Tied with thread, packed in brown paper.
+            Freshly crafted in our kitchen, inspired by ’90s flavors you love . . .
           </p>
         </div>
 

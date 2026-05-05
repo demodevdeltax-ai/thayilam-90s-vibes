@@ -9,7 +9,7 @@ export function Hero() {
         <div className="md:col-span-7 relative">
           <div className="flex items-center gap-3 mb-5 text-olive">
             <SparkIcon size={18} />
-            <span className="text-[11px] tracking-[0.3em] uppercase">Tasted in 1994 · Made today</span>
+            <span className="text-[11px] tracking-[0.3em] uppercase font-bold ">మర్చిపోయిన ఆనాటి రుచులు మళ్లీ కొత్తగా!!!</span>
           </div>
 
           <h1 className="font-script text-rust leading-[0.85] text-[5.5rem] sm:text-[7rem] md:text-[9rem] lg:text-[11rem]">
@@ -27,7 +27,7 @@ export function Hero() {
             </Button>
             <div className="flex items-center gap-2 text-olive">
               <LeafIcon size={20} />
-              <span className="font-script text-xl text-brown">freshly packed daily</span>
+              <span className="font-script text-xl text-brown">Made today, packed today, delivered fresh today — no stock, no shortcuts</span>
             </div>
           </div>
         </div>
@@ -45,7 +45,7 @@ export function Hero() {
               className="relative w-full h-full object-cover rounded-full"
             ></video>
             <span className="absolute top-4 -right-2 paper-sand ink-border-thin rounded-full h-20 w-20 grid place-items-center text-center text-[10px] uppercase tracking-widest text-brown/80 stamp-rotate-r leading-tight">
-              hand<br/>rolled<br/>· est ·
+              Freshly<br/>packed<br/>· today ·
             </span>
           </div>
         </div>
