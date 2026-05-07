@@ -4,9 +4,19 @@ import Razorpay from "razorpay";
 
 const app = express();
 
+// IMPORTANT
+app.use(express.json());
+
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
   key_secret: process.env.RAZORPAY_KEY_SECRET,
+});
+
+app.get("/", (req, res) => {
+  res.json({
+    success: true,
+    message: "Razorpay backend running",
+  });
 });
 
 app.post("/create-order", async (req, res) => {
@@ -133,7 +143,5 @@ app.post(
     }
   }
 );
-
-app.use(express.json());
 
 export default app;
