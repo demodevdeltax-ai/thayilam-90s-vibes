@@ -27,8 +27,6 @@ import { supabase } from "@/lib/supabase";
 // order-creation endpoint when ready.
 import { toast } from "sonner";
 import packedDabba from "@/assets/illustration-packed-dabba.png";
-import Razorpay from "razorpay";
-import crypto from "crypto";
 
 type Variant = {
   size: number;
@@ -197,7 +195,7 @@ function CheckoutPage() {
       // ======================================
 
       const orderRes = await fetch(
-        "http://localhost:3000/create-order",
+        `${import.meta.env.VITE_BACKEND_URL}/create-order`,
         {
           method: "POST",
           headers: {
@@ -213,6 +211,7 @@ function CheckoutPage() {
               email: user?.email,
               phone: address.phone,
             },
+            amount: total * 100,
           }),
         }
       );
@@ -245,7 +244,7 @@ function CheckoutPage() {
           // ======================================
 
           const verifyRes = await fetch(
-            "http://localhost:3000/verify-payment",
+            `${import.meta.env.VITE_BACKEND_URL}/verify-payment`,
             {
               method: "POST",
               headers: {
@@ -1087,9 +1086,7 @@ function OrderSummary({ subtotal, delivery, total }: { subtotal: number; deliver
                 <div className="text-sm text-brown truncate">{p.name}</div>
                 <div className="text-[10px] text-brown/60">{it.weight} · ×{it.qty}</div>
               </div>
-              const safePrice = getValidatedPrice(p, it.weight);
-              <div className="text-sm font-medium text-brown">{rupee(safePrice * it.qty)}</div>
-            </li>
+              <div className="text-sm font-medium text-brown">{rupee(safePrice * it.qty)}</div>            </li>
           );
         })}
       </ul>

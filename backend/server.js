@@ -19,12 +19,13 @@ app.get("/", (req, res) => {
 
 app.post("/create-order", async (req, res) => {
   try {
-    const razorpay = getRazorpay(); // ✅ called here
-    const amount = 50000;
+    const { items, customer, amount } = req.body;
+    const razorpay = getRazorpay();
+
     const order = await razorpay.orders.create({
-      amount,
+      amount: amount,
       currency: "INR",
-      receipt: `receipt_${Date.now()}`,
+      receipt: `receipt_${Date.now()}`
     });
     return res.json({ success: true, order, key: process.env.RAZORPAY_KEY_ID });
   } catch (error) {
@@ -59,6 +60,7 @@ app.post("/verify-payment", async (req, res) => {
       });
     }
 
+    const razorpay = getRazorpay();
     const payment = await razorpay.payments.fetch(
       razorpay_payment_id
     );
