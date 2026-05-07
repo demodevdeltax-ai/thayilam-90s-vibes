@@ -7,9 +7,6 @@ const app = express();
 
 app.use(cors({
   origin: [
-    "http://localhost:5173",
-    "http://localhost:3000",
-    "https://thayilam.me",        // your production frontend domain
     "https://www.thayilamfoods.com",
   ],
   methods: ["GET", "POST"],

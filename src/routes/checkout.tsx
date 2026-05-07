@@ -138,7 +138,7 @@ function CheckoutPage() {
     }, 0);
   }, [items, getProduct]);
 
-  const delivery = validatedSubtotal >= 999 || validatedSubtotal === 0 ? 0 : 49;
+  const delivery = validatedSubtotal >= 999 || validatedSubtotal === 0 ? 0 : 0;
   const total = validatedSubtotal + delivery;
   useEffect(() => {
     async function fetchAddresses() {
