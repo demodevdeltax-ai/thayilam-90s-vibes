@@ -3,53 +3,36 @@ import crypto from "crypto";
 import Razorpay from "razorpay";
 
 const app = express();
-
-// IMPORTANT
 app.use(express.json());
 
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_KEY_SECRET,
-});
+// ✅ Lazy init — only created when first request hits
+function getRazorpay() {
+  return new Razorpay({
+    key_id: process.env.RAZORPAY_KEY_ID,
+    key_secret: process.env.RAZORPAY_KEY_SECRET,
+  });
+}
 
 app.get("/", (req, res) => {
-  res.json({
-    success: true,
-    message: "Razorpay backend running",
-  });
+  res.json({ success: true, message: "Razorpay backend running" });
 });
 
 app.post("/create-order", async (req, res) => {
   try {
-
-    const { items } = req.body;
-
-    // TODO:
-    // calculate total from DB products
-
+    const razorpay = getRazorpay(); // ✅ called here
     const amount = 50000;
-
     const order = await razorpay.orders.create({
       amount,
       currency: "INR",
-      receipt: `receipt_${Date.now()}`
+      receipt: `receipt_${Date.now()}`,
     });
-
-    return res.json({
-      success: true,
-      order,
-      key: process.env.RAZORPAY_KEY_ID,
-    });
-
+    return res.json({ success: true, order, key: process.env.RAZORPAY_KEY_ID });
   } catch (error) {
     console.error(error);
-
-    return res.status(500).json({
-      success: false,
-      message: "Order creation failed",
-    });
+    return res.status(500).json({ success: false, message: "Order creation failed" });
   }
 });
+
 
 app.post("/verify-payment", async (req, res) => {
   try {
