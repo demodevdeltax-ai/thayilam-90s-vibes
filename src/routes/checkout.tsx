@@ -263,7 +263,9 @@ function CheckoutPage() {
           // ======================================
 
           await placeOrderAfterPayment(
-            response.razorpay_payment_id
+            response.razorpay_payment_id,
+            response.razorpay_order_id,
+            response.razorpay_signature
           );
         },
 
@@ -293,7 +295,9 @@ function CheckoutPage() {
   }
 
   async function placeOrderAfterPayment(
-    paymentId: string | null
+    paymentId: string,
+    razorpayOrderId: string,
+    razorpaySignature: string
   ): Promise<void> {
     if (!user) {
       toast.error("Please sign in");
@@ -326,6 +330,13 @@ function CheckoutPage() {
           ship_city: address.city,
           ship_state: address.state,
           ship_pincode: address.pincode,
+          razorpay_order_id: razorpayOrderId,
+          razorpay_payment_id: paymentId,
+          razorpay_signature: razorpaySignature,
+          payment_status: "paid",
+          payment_verified: true,
+          paid_at: new Date().toISOString(),
+          status: "Pending",
         })
         .select()
         .single();
