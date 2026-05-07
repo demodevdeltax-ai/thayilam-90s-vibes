@@ -104,7 +104,7 @@ type Address = {
   type: "Home" | "Office";
 };
 
-
+const [paidAmount, setPaidAmount] = useState(0);
 
 const STEPS = ["Address", "Payment", "Confirm"] as const;
 type Step = (typeof STEPS)[number];
@@ -126,6 +126,7 @@ function CheckoutPage() {
   // order
   const [orderId, setOrderId] = useState<string>("");
   const [placing, setPlacing] = useState(false);
+  const [finalOrder, setFinalOrder] = useState<any>(null);
 
   const validatedSubtotal = useMemo(() => {
     return items.reduce((sum, it) => {
@@ -377,6 +378,7 @@ function CheckoutPage() {
 
       // 3. Success
       setOrderId(order.order_number); // from DB
+      setFinalOrder(order);
       setStep("Confirm");
 
     } catch (err) {
@@ -465,13 +467,13 @@ function CheckoutPage() {
                 />
               )}
               {step === "Confirm" && (
-                <ConfirmStep
-                  orderId={orderId}
-                  address={addresses.find((a) => a.id === selected)}
-                  pay={pay}
-                  total={total}
-                  onClear={clear}
-                />
+              <ConfirmStep
+                orderId={orderId}
+                address={addresses.find((a) => a.id === selected)}
+                pay={pay}
+                total={finalOrder?.total || 0}
+                onClear={clear}
+              />
               )}
             </div>
 
