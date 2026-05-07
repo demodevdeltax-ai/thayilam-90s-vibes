@@ -26,6 +26,7 @@ export type MockUser = {
   phone: string;
   fullName: string;
   role: Role;
+  email?: string;
   createdAt: string;
 };
 

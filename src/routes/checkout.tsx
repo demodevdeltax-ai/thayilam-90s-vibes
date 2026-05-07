@@ -27,7 +27,8 @@ import { supabase } from "@/lib/supabase";
 // order-creation endpoint when ready.
 import { toast } from "sonner";
 import packedDabba from "@/assets/illustration-packed-dabba.png";
-
+import Razorpay from "razorpay";
+import crypto from "crypto";
 
 type Variant = {
   size: number;
@@ -182,11 +183,127 @@ function CheckoutPage() {
 
   const stepIndex = STEPS.indexOf(step);
 
-  async function placeOrder() {
+  async function startRazorpayPayment() {
+    try {
+      const address = addresses.find((a) => a.id === selected);
+
+      if (!address) {
+        toast.error("Select address");
+        return;
+      }
+
+      // ======================================
+      // CREATE ORDER FROM BACKEND
+      // ======================================
+
+      const orderRes = await fetch(
+        "http://localhost:3000/create-order",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            items: items.map((i) => ({
+              id: i.productId,
+              quantity: i.qty,
+            })),
+            customer: {
+              name: address.name,
+              email: user?.email,
+              phone: address.phone,
+            },
+          }),
+        }
+      );
+
+      const orderData = await orderRes.json();
+
+      if (!orderData.success) {
+        toast.error(orderData.message);
+        return;
+      }
+
+      const { order, key } = orderData;
+
+      // ======================================
+      // OPEN RAZORPAY CHECKOUT
+      // ======================================
+
+      const options = {
+        key,
+        amount: order.amount,
+        currency: order.currency,
+        name: "Thayilam",
+        description: "Order Payment",
+        order_id: order.id,
+
+        handler: async function (response: any) {
+
+          // ======================================
+          // VERIFY PAYMENT
+          // ======================================
+
+          const verifyRes = await fetch(
+            "http://localhost:3000/verify-payment",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(response),
+            }
+          );
+
+          const verifyData = await verifyRes.json();
+
+          if (!verifyData.success) {
+            toast.error("Payment verification failed");
+            return;
+          }
+
+          // ======================================
+          // NOW SAVE ORDER IN SUPABASE
+          // ======================================
+
+          await placeOrderAfterPayment(
+            response.razorpay_payment_id
+          );
+        },
+
+        prefill: {
+          name: address.name,
+          email: user?.email,
+          contact: address.phone,
+        },
+
+        theme: {
+          color: "#8B5E3C",
+        },
+      };
+
+      const razorpay = new window.Razorpay(options);
+
+      razorpay.on("payment.failed", function () {
+        toast.error("Payment failed");
+      });
+
+      razorpay.open();
+
+    } catch (err) {
+      console.error(err);
+      toast.error("Something went wrong");
+    }
+  }
+
+  async function placeOrderAfterPayment(
+    paymentId: string | null
+  ): Promise<void> {
     if (!user) {
       toast.error("Please sign in");
       return;
     }
+     
 
     const address = addresses.find((a) => a.id === selected);
     if (!address) {
@@ -335,7 +452,7 @@ function CheckoutPage() {
                   pay={pay}
                   setPay={setPay}
                   onBack={() => setStep("Address")}
-                  onNext={placeOrder}
+                  onNext={startRazorpayPayment}
                   total={total}
                   placing={placing}
                 />
@@ -692,7 +809,7 @@ function PaymentStep({
         <PayOption value="upi" current={pay} setPay={setPay} icon={<Smartphone size={18} />} title="UPI" subtitle="GPay, PhonePe, Paytm — instant">
           {pay === "upi" && (
             <div className="grid sm:grid-cols-[160px_1fr] gap-5 mt-2">
-              <FakeQR />
+            
               <div>
                 <label className="text-[10px] uppercase tracking-widest text-brown/65">UPI ID</label>
                 <input
