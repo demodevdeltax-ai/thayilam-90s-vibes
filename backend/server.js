@@ -9,7 +9,37 @@ const razorpay = new Razorpay({
   key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 
-app.use(express.json());
+app.post("/create-order", async (req, res) => {
+  try {
+
+    const { items } = req.body;
+
+    // TODO:
+    // calculate total from DB products
+
+    const amount = 50000;
+
+    const order = await razorpay.orders.create({
+      amount,
+      currency: "INR",
+      receipt: `receipt_${Date.now()}`
+    });
+
+    return res.json({
+      success: true,
+      order,
+      key: process.env.RAZORPAY_KEY_ID,
+    });
+
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Order creation failed",
+    });
+  }
+});
 
 app.post("/verify-payment", async (req, res) => {
   try {
@@ -104,6 +134,6 @@ app.post(
   }
 );
 
-app.listen(process.env.PORT, () => {
-  console.log(`Server running on port ${process.env.PORT}`);
-});
+app.use(express.json());
+
+export default app;
