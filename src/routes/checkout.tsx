@@ -5,10 +5,7 @@ import {
   ChevronRight,
   MapPin,
   Plus,
-  CreditCard,
   Smartphone,
-  Building2,
-  Banknote,
   Check,
   Truck,
   PackageCheck,
@@ -792,97 +789,31 @@ function PaymentStep({
   total: number;
   placing?: boolean;
 }) {
-  const [upi, setUpi] = useState("");
-  const [card, setCard] = useState({ num: "", name: "", exp: "", cvv: "" });
-  const [bank, setBank] = useState("HDFC");
+//UPI only
 
   return (
     <section className="paper-sand ink-border-thin rounded-2xl p-6 md:p-8">
       <div className="flex items-center gap-3 mb-1">
-        <CreditCard size={20} className="text-rust" strokeWidth={1.6} />
         <h2 className="font-display text-2xl text-brown">How shall we settle the bill?</h2>
       </div>
       <p className="font-script text-xl text-brown/65">pick the easiest way for you</p>
 
-      <div className="mt-6 space-y-3">
-        <PayOption value="upi" current={pay} setPay={setPay} icon={<Smartphone size={18} />} title="UPI" subtitle="GPay, PhonePe, Paytm — instant">
-          {pay === "upi" && (
-            <div className="grid sm:grid-cols-[160px_1fr] gap-5 mt-2">
-            
-              <div>
-                <label className="text-[10px] uppercase tracking-widest text-brown/65">UPI ID</label>
-                <input
-                  value={upi}
-                  onChange={(e) => setUpi(e.target.value)}
-                  placeholder="sundari@okhdfcbank"
-                  maxLength={50}
-                  className="mt-1.5 w-full bg-cream ink-border-thin rounded-xl px-3 h-11 text-sm text-brown focus:outline-none focus:ring-2 focus:ring-rust"
-                />
-                <p className="text-xs text-brown/60 mt-2">Or scan the QR with any UPI app.</p>
-              </div>
-            </div>
-          )}
-        </PayOption>
-
-        <PayOption value="netbanking" current={pay} setPay={setPay} icon={<Building2 size={18} />} title="Net Banking" subtitle="All major Indian banks">
-          {pay === "netbanking" && (
-            <div className="mt-2 flex flex-wrap gap-2">
-              {["HDFC", "ICICI", "SBI", "Axis", "Kotak", "Canara"].map((b) => {
-                const active = bank === b;
-                return (
-                  <button
-                    key={b}
-                    onClick={() => setBank(b)}
-                    className={`h-10 px-4 rounded-full text-xs uppercase tracking-wider ink-border-thin transition-colors ${
-                      active ? "bg-brown text-cream" : "text-brown hover:bg-brown/10"
-                    }`}
-                  >
-                    {b}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </PayOption>
-
-        <PayOption value="card" current={pay} setPay={setPay} icon={<CreditCard size={18} />} title="Credit / Debit Card" subtitle="Visa, Mastercard, RuPay, Amex">
-          {pay === "card" && (
-            <div className="grid sm:grid-cols-2 gap-3 mt-2">
-              <input
-                value={card.num}
-                onChange={(e) => setCard({ ...card, num: e.target.value.replace(/\D/g, "").slice(0, 16) })}
-                placeholder="Card number"
-                inputMode="numeric"
-                className="sm:col-span-2 bg-cream ink-border-thin rounded-xl px-3 h-11 text-sm text-brown focus:outline-none focus:ring-2 focus:ring-rust"
-              />
-              <input
-                value={card.name}
-                onChange={(e) => setCard({ ...card, name: e.target.value.slice(0, 60) })}
-                placeholder="Name on card"
-                className="sm:col-span-2 bg-cream ink-border-thin rounded-xl px-3 h-11 text-sm text-brown focus:outline-none focus:ring-2 focus:ring-rust"
-              />
-              <input
-                value={card.exp}
-                onChange={(e) => setCard({ ...card, exp: e.target.value.slice(0, 5) })}
-                placeholder="MM/YY"
-                className="bg-cream ink-border-thin rounded-xl px-3 h-11 text-sm text-brown focus:outline-none focus:ring-2 focus:ring-rust"
-              />
-              <input
-                value={card.cvv}
-                onChange={(e) => setCard({ ...card, cvv: e.target.value.replace(/\D/g, "").slice(0, 4) })}
-                placeholder="CVV"
-                inputMode="numeric"
-                className="bg-cream ink-border-thin rounded-xl px-3 h-11 text-sm text-brown focus:outline-none focus:ring-2 focus:ring-rust"
-              />
-            </div>
-          )}
-        </PayOption>
-
-        <PayOption value="cod" current={pay} setPay={setPay} icon={<Banknote size={18} />} title="Cash on Delivery" subtitle="Pay the dabbawala when it arrives">
-          {pay === "cod" && (
-            <p className="text-xs text-brown/65 mt-2 italic">A small ₹20 handling charge applies for COD.</p>
-          )}
-        </PayOption>
+      <div className="mt-6">
+        <div className="paper rounded-xl ink-border-thin border-rust ring-2 ring-rust/25 p-5 flex items-center gap-4">
+          <span className="h-10 w-10 rounded-full paper-sand text-brown grid place-items-center shrink-0">
+            <Smartphone size={18} />
+          </span>
+          <div>
+            <div className="font-display text-brown text-base">UPI Payment</div>
+            <div className="text-xs text-brown/60">GPay, PhonePe, Paytm & all UPI apps</div>
+          </div>
+          <span className="ml-auto h-5 w-5 rounded-full bg-rust text-cream grid place-items-center shrink-0">
+            <Check size={12} strokeWidth={2.4} />
+          </span>
+        </div>
+        <p className="text-xs text-brown/55 mt-3 text-center italic">
+          You'll be redirected to your UPI app to complete payment securely.
+        </p>
       </div>
 
       <div className="mt-7 flex items-center justify-between gap-3">
@@ -986,6 +917,7 @@ function ConfirmStep({
     if (!cleared) {
       onClear();
       setCleared(true);
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
   }, [cleared, onClear]);
 
