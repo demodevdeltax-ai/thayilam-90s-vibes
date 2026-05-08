@@ -89,7 +89,6 @@ function mapPayment(pay: string) {
   }
 }
 
-export default CheckoutPage;
 
 
 type Address = {
@@ -104,7 +103,7 @@ type Address = {
   type: "Home" | "Office";
 };
 
-const [paidAmount, setPaidAmount] = useState(0);
+// const [paidAmount, setPaidAmount] = useState(0);
 
 const STEPS = ["Address", "Payment", "Confirm"] as const;
 type Step = (typeof STEPS)[number];
@@ -1051,3 +1050,5 @@ function OrderSummary({ subtotal, delivery, total }: { subtotal: number; deliver
     </div>
   );
 }
+
+export default CheckoutPage;
