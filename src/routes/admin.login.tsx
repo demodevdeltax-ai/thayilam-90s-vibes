@@ -2,7 +2,7 @@ import { Link, useNavigate } from "@/lib/router-compat";
 import { Helmet } from "react-helmet-async";
 import { useEffect } from "react";
 import { ShieldCheck } from "lucide-react";
-import { WhatsAppOtpForm } from "@/components/whatsapp-otp-form";
+
 import { useAuth } from "@/lib/auth";
 
 
@@ -42,14 +42,6 @@ function AdminLoginPage() {
           </p>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm text-slate-900">
-          <WhatsAppOtpForm
-            audience="admin"
-            initialMode="login"
-            theme="slate"
-            onAuthenticated={() => navigate({ to: "/admin" })}
-          />
-        </div>
 
         <div className="text-center mt-5 text-xs text-slate-500">
           Are you a customer?{" "}
