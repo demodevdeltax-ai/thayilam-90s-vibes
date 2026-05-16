@@ -32,7 +32,7 @@ export function Categories() {
       <div className="mx-auto max-w-7xl px-5 md:px-8">
         <div className="flex items-end justify-between mb-6">
           <div>
-            <h2 className="font-display text-2xl md:text-3xl text-brown">Shop by Varients</h2>
+            <h2 className="font-display text-2xl md:text-3xl text-brown">Explore Our Tastes</h2>
           </div>
           <Link to="/shop" className="hidden sm:inline text-xs uppercase tracking-widest text-rust hover:underline">
             View all →

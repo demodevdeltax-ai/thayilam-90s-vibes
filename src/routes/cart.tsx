@@ -52,12 +52,18 @@ function CartPage() {
     for (const it of items) {
       const p = getProduct(it.productId);
       if (!p) continue;
-      rows.push({ ...it, name: p.name, telugu: p.telugu, img: p.img, mrp: p.mrp ?? null });
+      rows.push({
+        ...it,
+        name: p.name,
+        telugu: p.name_telugu ?? "",
+        img: p.image_url ?? "",
+        mrp: p.mrp ?? null,
+      });
     }
     return rows;
   }, [items, getProduct]);
 
-  const delivery = subtotal === 0 ? 0 : subtotal >= 999 || applied?.code === "FREESHIP" ? 0 : 49;
+  const delivery = subtotal === 0 ? 0 : subtotal >= 999 || applied?.code === "FREESHIP" ? 0 : 0;
   const discount = applied
     ? applied.off > 0
       ? Math.round(subtotal * applied.off)
@@ -94,15 +100,6 @@ function CartPage() {
         </div>
 
         <div className="mx-auto max-w-7xl px-5 md:px-8 py-8 md:py-14">
-          <div className="mb-8 md:mb-10">
-            <div className="text-[11px] tracking-[0.3em] uppercase text-olive mb-2">— Your dabba —</div>
-            <h1 className="font-script text-rust text-6xl md:text-7xl leading-none">
-              Tied with thread
-            </h1>
-            <p className="font-display italic text-brown/70 mt-2">
-              {items.length === 0 ? "Nothing inside yet." : `${items.length} parcel${items.length === 1 ? "" : "s"} packed by hand.`}
-            </p>
-          </div>
 
           {items.length === 0 ? (
             <EmptyCart />

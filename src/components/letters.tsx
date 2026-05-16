@@ -2,19 +2,19 @@ import { LeafIcon, SparkIcon } from "./icons";
 
 const LETTERS = [
   {
-    body: "The mysore pak arrived wrapped in newspaper and brown thread. I cried a little. It tasted exactly like my Madurai summers.",
-    name: "Lakshmi R.",
-    place: "Bengaluru",
+    body: "The moment I opened the pack, the aroma itself reminded me of snacks made at my grandmother’s home. Fresh, crispy, and not overly oily like regular market snacks. Even the packing felt premium and hygienic.",
+    name: "M Raghu Nandhan",
+    place: "Hyderabad",
   },
   {
-    body: "Sent a box to my son in Boston. He called me at 2am to say it tasted like Sunday morning at our old house.",
-    name: "Mr. Subramaniam",
-    place: "Mylapore",
+    body: "Thayilam brought back childhood memories with every bite. Freshly made, perfectly seasoned, and beautifully packed.",
+    name: "K. Radha Saranya",
+    place: "Hyderabad",
   },
   {
-    body: "The murukku is dangerous. I finished a 200g packet standing at the kitchen counter, watching the rain.",
-    name: "Anjali D.",
-    place: "Pune",
+    body: "Thayilam feels less like ordering snacks online and more like receiving a homemade parcel from family. Authentic taste, fresh preparation, and excellent packaging made the whole experience special",
+    name: "P Uma",
+    place: "Hyderabad",
   },
 ];
 

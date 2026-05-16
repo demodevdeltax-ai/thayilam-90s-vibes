@@ -7,17 +7,17 @@ export function SiteFooter() {
         <div className="dashed-rule mb-12" />
         <div className="grid md:grid-cols-4 gap-10">
           <div className="md:col-span-2">
-            <div className="font-script text-5xl text-brown leading-none">Thayilam</div>
+            <div className="font-script text-5xl text-red-700 leading-none">Thayilam</div>
             <div className="font-script text-brown/60 text-2xl mt-1">a sweet surprise</div>
           </div>
 
           <div>
-            <div className="text-[10px] uppercase tracking-widest text-brown/60 mb-3">Wander</div>
+            <div className="text-[10px] uppercase tracking-widest text-red-700 mb-3">Wander</div>
             <ul className="space-y-2 text-brown">
               <li><a href="#shop" className="hover:text-rust">Shop</a></li>
               <li><a href="#story" className="hover:text-rust">Our story</a></li>
               <li><a href="#letter" className="hover:text-rust">Letters</a></li>
-              <li><a href="#visit" className="hover:text-rust">Visit the kitchen</a></li>
+              <li><a href="#letter" className="hover:text-rust">Policies</a></li>
             </ul>
           </div>
 

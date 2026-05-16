@@ -560,8 +560,8 @@ function AddressStep({
     name: "",
     phone: "",
     pincode: "",
-    city: "",
-    state: "",
+    city: "Kukatpally, Hyderabad",
+    state: "Telangana",
     line: "",
     landmark: "",
     type: "Home" as "Home" | "Office",
@@ -935,7 +935,7 @@ function ConfirmStep({
 
   const eta = useMemo(() => {
     const d = new Date();
-    d.setDate(d.getDate() + 4);
+    d.setDate(d.getDate() + 1);
     return d.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" });
   }, []);
 
@@ -949,7 +949,6 @@ function ConfirmStep({
         height={512}
         className="mx-auto w-52 h-52 md:w-64 md:h-64 line-art"
       />
-      <div className="text-[11px] tracking-[0.3em] uppercase text-olive mt-2">— Tied with thread —</div>
       <h1 className="font-script text-rust text-6xl md:text-7xl leading-none mt-2">
         Order placed!
       </h1>

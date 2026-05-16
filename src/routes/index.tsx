@@ -29,7 +29,7 @@ function RouteHead() {
             "Small-batch 90s Indian snacks — murukku, ladoo, chakli, mixture, pickles and sweets made fresh in Chennai.",
           contactPoint: {
             "@type": "ContactPoint",
-            telephone: "+91-98404-41994",
+            telephone: "+91-85006-76890",
             contactType: "customer service",
             areaServed: "IN",
           },

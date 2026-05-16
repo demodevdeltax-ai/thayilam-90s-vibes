@@ -94,7 +94,7 @@ export function ProductGrid({ filters = DEFAULT_FILTERS }: { filters?: Filters }
               — Today's tray —
             </div>
             <h2 className="font-display text-3xl md:text-5xl text-brown leading-tight">
-              Featured <span className="italic">snacks &amp; sweets</span>
+              Our <span className="italic">Best  Sellers</span>
             </h2>
           </div>
           <p className="md:max-w-sm text-brown/75">
@@ -132,7 +132,7 @@ export function ProductGrid({ filters = DEFAULT_FILTERS }: { filters?: Filters }
             to="/shop"
             className="inline-block rounded-full bg-rust text-cream uppercase tracking-wider text-xs font-semibold px-6 py-3 hover:bg-rust/90 transition-colors"
           >
-            View all snacks →
+            View all products →
           </Link>
         </div>
 
