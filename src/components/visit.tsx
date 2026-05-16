@@ -112,6 +112,14 @@ export function Visit() {
           ))}
         </div>
       </div>
+
+
+      <div className="mt-3 text-center text-sm sm:text-base md:text-lg text-brown/80 leading-relaxed font-medium max-w-2xl mx-auto">
+        Craving fresh snacks today? Order before 12 PM for same-day delivery by 9 PM.
+        <br />
+        Orders placed after 12 PM will arrive the next day.
+      </div>
+
     </section>
   );
 }

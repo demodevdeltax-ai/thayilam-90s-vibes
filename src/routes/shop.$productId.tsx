@@ -558,7 +558,7 @@ function ProductDetailInner({
                 {categoryDisplay}
               </div>
 
-              <h1 className="font-script text-rust leading-[0.85] text-6xl md:text-7xl">
+              <h1 className="font-script text-rust leading-[1.05] text-6xl md:text-7xl">
                 {product.name}
               </h1>
 
@@ -604,7 +604,7 @@ function ProductDetailInner({
                 </span>
                 {unitMrp && unitMrp > unitPrice && (
                   <>
-                    <span className="text-brown/45 line-through">{rupee(unitMrp)}</span>
+                    <span className="text-brown/45 text-sm line-through">{rupee(unitMrp)}</span>
                     <span className="text-[11px] uppercase tracking-widest text-olive font-semibold">
                       Save {rupee(unitMrp - unitPrice)}
                     </span>

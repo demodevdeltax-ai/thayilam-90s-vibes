@@ -38,7 +38,7 @@ type PastOrder = {
   order_number: string;
   total: number;
   status: string;
-  created_at: string;
+  placed_at: string;
   items: { product_name: string; weight: string; qty: number; unit_price: number; image_url?: string }[];
 };
 
@@ -67,9 +67,9 @@ function CartPage() {
     (async () => {
       const { data: ordersData } = await supabase
         .from("orders")
-        .select("id, order_number, total, status, created_at, order_items(product_id, product_name, weight, qty, unit_price)")
+        .select("id, order_number, total, status, placed_at, order_items(product_id, product_name, weight, qty, unit_price)")
         .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
+        .order("placed_at", { ascending: false })
         .limit(5);
 
       if (!ordersData) { setOrdersLoading(false); return; }
@@ -94,7 +94,7 @@ function CartPage() {
         order_number: o.order_number,
         total: o.total,
         status: o.status,
-        created_at: o.created_at,
+        placed_at: o.placed_at,
         items: (o.order_items || []).map((i: any) => ({
           product_name: i.product_name,
           weight: i.weight,
@@ -349,7 +349,7 @@ function CartPage() {
                         <div>
                           <span className="font-display text-brown text-sm">#{order.order_number}</span>
                           <span className="text-xs text-brown/50 ml-3">
-                            {new Date(order.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                            {new Date(order.placed_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
                           </span>
                         </div>
                         <div className="flex items-center gap-3">
