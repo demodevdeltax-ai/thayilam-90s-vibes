@@ -1,13 +1,14 @@
 import { Link, useNavigate } from "@/lib/router-compat";
 import { Helmet } from "react-helmet-async";
 import { useEffect, useMemo, useState } from "react";
-import { Minus, Plus, Trash2, Tag, ChevronRight } from "lucide-react";
+import { Minus, Plus, Trash2, Tag, ChevronRight, Package } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { Button } from "@/components/ui/button";
 import { useCart, type CartItem } from "@/lib/cart";
 import { rupee } from "@/lib/products";
 import { useAuth } from "@/lib/auth";
+import { supabase } from "@/lib/supabase";
 import emptyDabba from "@/assets/illustration-empty-dabba.png";
 
 
@@ -32,12 +33,23 @@ const COUPONS: Record<string, { off: number; label: string }> = {
   THAYI50: { off: 50, label: "₹50 off — welcome home" },
 };
 
+type PastOrder = {
+  id: string;
+  order_number: string;
+  total: number;
+  status: string;
+  created_at: string;
+  items: { product_name: string; weight: string; qty: number; unit_price: number; image_url?: string }[];
+};
+
 function CartPage() {
   const { items, subtotal, setQty, remove, getProduct } = useCart();
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, user } = useAuth();
   const navigate = useNavigate();
   const [code, setCode] = useState("");
   const [applied, setApplied] = useState<{ code: string; off: number; flat: number; label: string } | null>(null);
+  const [pastOrders, setPastOrders] = useState<PastOrder[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
 
   // Require auth to view cart
   useEffect(() => {
@@ -45,6 +57,57 @@ function CartPage() {
       navigate({ to: "/auth", search: { redirect: "/cart", mode: "login" } });
     }
   }, [loading, isAuthenticated, navigate]);
+
+  // Fetch previous orders — two-step to avoid FK join (products(image_url) returns 400
+  // when the order_items→products FK isn't registered in PostgREST).
+  useEffect(() => {
+    if (!user) return;
+    setOrdersLoading(true);
+
+    (async () => {
+      const { data: ordersData } = await supabase
+        .from("orders")
+        .select("id, order_number, total, status, created_at, order_items(product_id, product_name, weight, qty, unit_price)")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(5);
+
+      if (!ordersData) { setOrdersLoading(false); return; }
+
+      // Collect unique product IDs across all orders
+      const productIds = [...new Set(
+        ordersData.flatMap((o: any) => (o.order_items || []).map((i: any) => i.product_id).filter(Boolean))
+      )];
+
+      // Fetch images for those products in one query
+      const imageMap: Record<string, string> = {};
+      if (productIds.length > 0) {
+        const { data: products } = await supabase
+          .from("products")
+          .select("id, image_url")
+          .in("id", productIds);
+        for (const p of products || []) imageMap[p.id] = p.image_url ?? "";
+      }
+
+      const mapped: PastOrder[] = ordersData.map((o: any) => ({
+        id: o.id,
+        order_number: o.order_number,
+        total: o.total,
+        status: o.status,
+        created_at: o.created_at,
+        items: (o.order_items || []).map((i: any) => ({
+          product_name: i.product_name,
+          weight: i.weight,
+          qty: i.qty,
+          unit_price: i.unit_price,
+          image_url: imageMap[i.product_id] ?? "",
+        })),
+      }));
+
+      setPastOrders(mapped);
+      setOrdersLoading(false);
+    })();
+  }, [user]);
 
   const detailed = useMemo(() => {
     type Row = CartItem & { name: string; telugu: string; img: string; mrp: number | null };
@@ -63,7 +126,7 @@ function CartPage() {
     return rows;
   }, [items, getProduct]);
 
-  const delivery = subtotal === 0 ? 0 : subtotal >= 999 || applied?.code === "FREESHIP" ? 0 : 0;
+  const delivery = subtotal === 0 ? 0 : applied?.code === "FREESHIP" ? 0 : subtotal < 500 ? 50 : 0;
   const discount = applied
     ? applied.off > 0
       ? Math.round(subtotal * applied.off)
@@ -185,7 +248,7 @@ function CartPage() {
 
                 <div className="flex items-center justify-between text-xs text-brown/60 uppercase tracking-widest">
                   <Link to="/shop" className="hover:text-rust">← Continue shopping</Link>
-                  <span>Free shipping above ₹999</span>
+                  <span>{subtotal < 500 && subtotal > 0 ? `Add ₹${500 - subtotal} more for free delivery` : "Free delivery above ₹500"}</span>
                 </div>
               </div>
 
@@ -259,6 +322,62 @@ function CartPage() {
                   </p>
                 </div>
               </aside>
+            </div>
+          )}
+          {/* Previous Orders */}
+          {(pastOrders.length > 0 || ordersLoading) && (
+            <div className="mt-14 max-w-7xl">
+              <div className="flex items-center gap-2 mb-4">
+                <Package size={16} className="text-brown/60" />
+                <h3 className="text-[11px] tracking-[0.25em] uppercase text-brown/60">Your previous orders</h3>
+              </div>
+
+              {ordersLoading ? (
+                <div className="space-y-3">
+                  {[1,2].map(i => (
+                    <div key={i} className="paper-sand ink-border-thin rounded-xl p-4 animate-pulse">
+                      <div className="h-3 bg-brown/10 rounded w-1/4 mb-2" />
+                      <div className="h-3 bg-brown/10 rounded w-1/3" />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {pastOrders.map((order) => (
+                    <div key={order.id} className="paper ink-border-thin rounded-xl p-4">
+                      <div className="flex items-center justify-between gap-3 mb-3">
+                        <div>
+                          <span className="font-display text-brown text-sm">#{order.order_number}</span>
+                          <span className="text-xs text-brown/50 ml-3">
+                            {new Date(order.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className={`text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full font-semibold ${
+                            order.status === "Delivered" ? "bg-olive text-cream" :
+                            order.status === "Shipped" ? "bg-rust/20 text-rust" :
+                            "bg-brown/10 text-brown/70"
+                          }`}>{order.status}</span>
+                          <span className="font-display text-brown text-sm">{rupee(order.total)}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                        {order.items.map((item, i) => (
+                          <div key={i} className="flex items-center gap-2 shrink-0 paper-sand rounded-lg px-2.5 py-2 ink-border-thin">
+                            {item.image_url && (
+                              <img src={item.image_url} alt={item.product_name} className="w-8 h-8 object-cover rounded" />
+                            )}
+                            <div>
+                              <div className="text-xs text-brown font-medium truncate max-w-[120px]">{item.product_name}</div>
+                              <div className="text-[10px] text-brown/55">{item.weight} × {item.qty}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>

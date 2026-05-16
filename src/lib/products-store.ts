@@ -39,7 +39,7 @@ function rowToProduct(r: Row): Product {
     diet: (r.diet ?? []) as Diet[],
     popularity: r.popularity ?? 50,
     createdAt: r.created_at,
-    img: r.image_url ?? "",
+    image_url: r.image_url ?? "",
     badge: r.badge ?? undefined,
     packSizes: (r.pack_sizes ?? []) as number[],
     sku: r.sku,

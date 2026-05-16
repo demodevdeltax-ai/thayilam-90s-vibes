@@ -303,7 +303,7 @@ export function topSellingProducts(n = 5) {
       id: p.id,
       name: p.name,
       vendor: p.vendor,
-      img: p.img,
+      img: p.image_url,
       sales: 80 + Math.round(p.popularity * 4.2),
       revenue: (80 + Math.round(p.popularity * 4.2)) * p.price,
     }));

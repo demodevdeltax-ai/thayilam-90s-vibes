@@ -138,7 +138,7 @@ function CheckoutPage() {
     }, 0);
   }, [items, getProduct]);
 
-  const delivery = validatedSubtotal >= 999 || validatedSubtotal === 0 ? 0 : 0;
+  const delivery = validatedSubtotal === 0 ? 0 : validatedSubtotal < 500 ? 50 : 0;
   const total = validatedSubtotal + delivery;
   useEffect(() => {
     async function fetchAddresses() {
@@ -1006,6 +1006,13 @@ function Stat({ label, value, icon }: { label: string; value: string; icon?: Rea
 
 /* ----------------------------- order summary ---------------------------- */
 
+function resolveImage(imageUrl?: string): string {
+  if (!imageUrl) return "/placeholder.jpeg";
+  if (imageUrl.startsWith("http")) return imageUrl;
+  const base = import.meta.env.VITE_SUPABASE_URL;
+  return `${base}/storage/v1/object/public/product-images/${imageUrl}`;
+}
+
 function OrderSummary({ subtotal, delivery, total }: { subtotal: number; delivery: number; total: number }) {
   const { items, getProduct } = useCart();
   return (
@@ -1019,17 +1026,19 @@ function OrderSummary({ subtotal, delivery, total }: { subtotal: number; deliver
           if (!p) return null;
 
           const safePrice = getValidatedPrice(p, it.weight);
+          const imgSrc = resolveImage(p.image_url);
 
           return (
             <li key={it.id} className="flex items-center gap-3">
-              <div className="relative h-12 w-12 rounded-lg paper grid place-items-center shrink-0 ink-border-thin">
-                <img src={p.image_url} alt="" loading="lazy" className="w-full h-full object-contain p-1.5 line-art" />
+              <div className="relative h-12 w-12 rounded-lg paper grid place-items-center shrink-0 ink-border-thin overflow-hidden">
+                <img src={imgSrc} alt={p.name} loading="lazy" className="w-full h-full object-cover" />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="text-sm text-brown truncate">{p.name}</div>
                 <div className="text-[10px] text-brown/60">{it.weight} · ×{it.qty}</div>
               </div>
-              <div className="text-sm font-medium text-brown">{rupee(safePrice * it.qty)}</div>            </li>
+              <div className="text-sm font-medium text-brown">{rupee(safePrice * it.qty)}</div>
+            </li>
           );
         })}
       </ul>
@@ -1038,7 +1047,12 @@ function OrderSummary({ subtotal, delivery, total }: { subtotal: number; deliver
         <div className="flex justify-between"><dt className="text-brown/75">Subtotal</dt><dd>{rupee(subtotal)}</dd></div>
         <div className="flex justify-between">
           <dt className="text-brown/75">Delivery</dt>
-          <dd>{delivery === 0 ? <span className="text-olive">Free</span> : rupee(delivery)}</dd>
+          <dd>
+            {delivery === 0
+              ? <span className="text-olive">Free</span>
+              : <span className="flex items-center gap-1">{rupee(delivery)} <span className="text-brown/50 text-[10px]">(below ₹500)</span></span>
+            }
+          </dd>
         </div>
       </dl>
       <div className="dashed-rule my-4" />
@@ -1046,6 +1060,11 @@ function OrderSummary({ subtotal, delivery, total }: { subtotal: number; deliver
         <span className="font-display text-brown">Total</span>
         <span className="font-script text-3xl text-rust leading-none">{rupee(total)}</span>
       </div>
+      {delivery > 0 && (
+        <p className="text-[10px] text-brown/55 mt-2 text-center">
+          Add ₹{500 - subtotal} more for free delivery
+        </p>
+      )}
     </div>
   );
 }

@@ -122,7 +122,7 @@ function DashboardPage() {
                   <li key={p.productId || p.name} className="flex items-center gap-3 px-4 py-3 border-b border-slate-100 last:border-0">
                     <div className="text-xs font-mono text-slate-400 w-5">{i + 1}</div>
                     <div className="h-9 w-9 rounded-md bg-slate-100 grid place-items-center overflow-hidden">
-                      {prod?.img && <img src={prod.img} alt={p.name} className="h-7 w-7 object-contain" />}
+                      {prod?.image_url && <img src={prod.image_url} alt={p.name} className="h-7 w-7 object-contain" />}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium text-slate-900 truncate">{p.name}</div>

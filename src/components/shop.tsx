@@ -66,7 +66,7 @@ export function Shop() {
               <div className="relative aspect-square mb-4 flex items-center justify-center">
                 <div className="absolute inset-4 rounded-full border border-dashed border-brown/30" />
                 <img
-                  src={s.img}
+                  src={s.image_url ?? ""}
                   alt={s.name}
                   loading="lazy"
                   width={512}
