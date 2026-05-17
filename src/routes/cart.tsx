@@ -11,6 +11,12 @@ import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 import emptyDabba from "@/assets/illustration-empty-dabba.png";
 
+function resolveImage(url?: string): string {
+  if (!url) return "/placeholder.jpeg";
+  if (url.startsWith("http")) return url;
+  return `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/product-images/${url}`;
+}
+
 
 function RouteHead() {
   return (
@@ -181,12 +187,12 @@ function CartPage() {
                         <div className="relative h-24 w-24 md:h-28 md:w-28 shrink-0 rounded-xl overflow-hidden paper grid place-items-center">
                           <div className="absolute inset-2 rounded-full border border-dashed border-brown/25" />
                           <img
-                            src={it.img}
+                            src={resolveImage(it.img)}
                             alt={it.name}
                             loading="lazy"
                             width={224}
                             height={224}
-                            className="relative w-full h-full object-contain p-3 line-art"
+                            className="relative w-full h-full object-cover"
                           />
                         </div>
                         <div className="flex-1 min-w-0 flex flex-col">

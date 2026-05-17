@@ -24,33 +24,35 @@ type CartCtx = {
 };
 
 const Ctx = createContext<CartCtx | null>(null);
-const KEY = "thayilam-cart-v1";
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [hydrated, setHydrated] = useState(false);
-  // Trigger product loading so add()/getProduct() find data.
   const products = useAllProducts();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
 
+  // User-specific storage key — prevents one user's cart showing for another
+  const storageKey = `thayilam-cart-v1${user?.id ? `-${user.id}` : ""}`;
+
+  // Re-hydrate whenever user identity changes (login / logout)
   useEffect(() => {
     try {
-      const raw = typeof window !== "undefined" ? localStorage.getItem(KEY) : null;
-      if (raw) setItems(JSON.parse(raw));
+      const raw = typeof window !== "undefined" ? localStorage.getItem(storageKey) : null;
+      setItems(raw ? JSON.parse(raw) : []);
     } catch {
-      // ignore
+      setItems([]);
     }
     setHydrated(true);
-  }, []);
+  }, [storageKey]);
 
   useEffect(() => {
     if (!hydrated) return;
     try {
-      localStorage.setItem(KEY, JSON.stringify(items));
+      localStorage.setItem(storageKey, JSON.stringify(items));
     } catch {
       // ignore
     }
-  }, [items, hydrated]);
+  }, [items, hydrated, storageKey]);
 
   const getProduct = useCallback(
     (productId: string) => products.find((p) => p.id === productId) ?? getCachedProduct(productId),

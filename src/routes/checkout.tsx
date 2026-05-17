@@ -119,6 +119,28 @@ function CheckoutPage() {
   const [selected, setSelected] = useState<string>("");
   const [adding, setAdding] = useState(false);
 
+  async function handleDeleteAddress(id: string) {
+    const { error } = await supabase.from("addresses").delete().eq("id", id);
+    if (error) { toast.error(error.message); return; }
+    setAddresses((prev) => prev.filter((a) => a.id !== id));
+    if (selected === id) setSelected((prev) => addresses.find((a) => a.id !== id && a.id !== prev)?.id ?? "");
+  }
+
+  async function handleUpdateAddress(id: string, updates: Omit<Address, "id">) {
+    const { error } = await supabase.from("addresses").update({
+      name: updates.name,
+      phone: updates.phone,
+      line: updates.line,
+      city: updates.city,
+      state: updates.state,
+      pincode: updates.pincode,
+      landmark: updates.landmark,
+      type: updates.type,
+    }).eq("id", id);
+    if (error) { toast.error(error.message); return; }
+    setAddresses((prev) => prev.map((a) => a.id === id ? { ...a, ...updates } : a));
+  }
+
   // payment
   const [pay, setPay] = useState<"upi" | "netbanking" | "card" | "cod">("upi");
 
@@ -421,37 +443,18 @@ function CheckoutPage() {
                   setAdding={setAdding}
                   onAdd={async (a) => {
                     if (!user) return;
-
-                    if (addresses.length >= 3) {
-                      toast.error("Maximum 3 addresses allowed");
-                      return;
-                    }
-
+                    if (addresses.length >= 3) { toast.error("Maximum 3 addresses allowed"); return; }
                     const { data, error } = await supabase
                       .from("addresses")
-                      .insert({
-                        user_id: user.id,
-                        name: a.name,
-                        phone: a.phone,
-                        line: a.line,
-                        city: a.city,
-                        state: a.state,
-                        pincode: a.pincode,
-                        landmark: a.landmark,
-                        type: a.type,
-                      })
-                      .select()
-                      .single();
-
-                    if (error) {
-                      toast.error(error.message);
-                      return;
-                    }
-
+                      .insert({ user_id: user.id, name: a.name, phone: a.phone, line: a.line, city: a.city, state: a.state, pincode: a.pincode, landmark: a.landmark, type: a.type })
+                      .select().single();
+                    if (error) { toast.error(error.message); return; }
                     setAddresses((prev) => [data, ...prev]);
                     setSelected(data.id);
                     setAdding(false);
                   }}
+                  onDelete={handleDeleteAddress}
+                  onUpdate={handleUpdateAddress}
                   onNext={() => setStep("Payment")}
                 />
               )}
@@ -539,6 +542,11 @@ const addressSchema = z.object({
   type: z.enum(["Home", "Office"]),
 });
 
+const FIXED_CITY = "Kukatpally, Hyderabad";
+const FIXED_STATE = "Telangana";
+
+const EMPTY_ADDR_FORM = { name: "", phone: "", pincode: "", line: "", landmark: "", type: "Home" as "Home" | "Office" };
+
 function AddressStep({
   addresses,
   selected,
@@ -546,6 +554,8 @@ function AddressStep({
   adding,
   setAdding,
   onAdd,
+  onDelete,
+  onUpdate,
   onNext,
 }: {
   addresses: Address[];
@@ -554,32 +564,56 @@ function AddressStep({
   adding: boolean;
   setAdding: (v: boolean) => void;
   onAdd: (a: Address) => void;
+  onDelete: (id: string) => void;
+  onUpdate: (id: string, updates: Omit<Address, "id">) => void;
   onNext: () => void;
 }) {
-  const [form, setForm] = useState({
-    name: "",
-    phone: "",
-    pincode: "",
-    city: "Kukatpally, Hyderabad",
-    state: "Telangana",
-    line: "",
-    landmark: "",
-    type: "Home" as "Home" | "Office",
-  });
+  const [form, setForm] = useState(EMPTY_ADDR_FORM);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const parsed = addressSchema.safeParse(form);
+  function buildPayload(f: typeof EMPTY_ADDR_FORM) {
+    return { ...f, city: FIXED_CITY, state: FIXED_STATE };
+  }
+
+  function validate(f: typeof EMPTY_ADDR_FORM) {
+    const parsed = addressSchema.safeParse(buildPayload(f));
     if (!parsed.success) {
       const errs: Record<string, string> = {};
       for (const issue of parsed.error.issues) errs[issue.path[0] as string] = issue.message;
       setErrors(errs);
-      return;
+      return null;
     }
     setErrors({});
-    onAdd({ id: "a" + Date.now(), ...parsed.data, landmark: parsed.data.landmark || undefined });
+    return parsed.data;
+  }
+
+  function startEdit(a: Address) {
+    setEditingId(a.id);
+    setForm({ name: a.name, phone: a.phone, pincode: a.pincode, line: a.line, landmark: a.landmark ?? "", type: a.type });
+    setAdding(false);
+  }
+
+  function cancelEdit() { setEditingId(null); setForm(EMPTY_ADDR_FORM); setErrors({}); }
+
+  const submitAdd = (e: React.FormEvent) => {
+    e.preventDefault();
+    const data = validate(form);
+    if (!data) return;
+    onAdd({ id: "a" + Date.now(), ...data, landmark: data.landmark || undefined });
+    setForm(EMPTY_ADDR_FORM);
   };
+
+  const submitEdit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingId) return;
+    const data = validate(form);
+    if (!data) return;
+    onUpdate(editingId, { ...data, landmark: data.landmark || undefined });
+    cancelEdit();
+  };
+
+  const showForm = adding || editingId !== null;
 
   return (
     <section className="paper-sand ink-border-thin rounded-2xl p-6 md:p-8">
@@ -589,121 +623,108 @@ function AddressStep({
       </div>
       <p className="font-script text-xl text-brown/65">choose an address or add a new one</p>
 
-      <div className="mt-6 grid sm:grid-cols-2 gap-3">
+      {/* Delivery area badge */}
+      <div className="mt-3 inline-flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-olive bg-olive/10 px-3 py-1 rounded-full">
+        <span>📍</span> Delivering to {FIXED_CITY}, {FIXED_STATE} only
+      </div>
+
+      <div className="mt-5 grid sm:grid-cols-2 gap-3">
         {addresses.map((a) => {
           const active = a.id === selected;
           return (
-            <button
+            <div
               key={a.id}
-              onClick={() => setSelected(a.id)}
-              className={`relative text-left paper rounded-xl p-4 ink-border-thin transition-all ${
+              className={`relative paper rounded-xl ink-border-thin transition-all ${
                 active ? "border-rust ring-2 ring-rust/30" : "hover:border-brown/60"
               }`}
             >
-              <div className="flex items-start justify-between gap-2">
-                <div className="font-display text-brown text-base">{a.name}</div>
-                <span className="text-[10px] uppercase tracking-widest px-2 py-0.5 rounded-full bg-olive text-cream">
-                  {a.type}
-                </span>
+              {/* Select area */}
+              <button
+                onClick={() => setSelected(a.id)}
+                className="w-full text-left p-4"
+              >
+                <div className="flex items-start justify-between gap-2 pr-6">
+                  <div className="font-display text-brown text-base">{a.name}</div>
+                  <span className="text-[10px] uppercase tracking-widest px-2 py-0.5 rounded-full bg-olive text-cream shrink-0">
+                    {a.type}
+                  </span>
+                </div>
+                <div className="text-sm text-brown/80 mt-1 leading-relaxed">{a.line}</div>
+                {a.landmark && <div className="text-xs text-brown/60 italic">Near {a.landmark}</div>}
+                <div className="text-xs text-brown/70 mt-1">{a.city}, {a.state} — {a.pincode}</div>
+                <div className="text-xs text-brown/60 mt-1">📞 {a.phone}</div>
+              </button>
+
+              {/* Edit / Delete */}
+              <div className="flex gap-2 px-4 pb-3">
+                <button
+                  onClick={() => startEdit(a)}
+                  className="text-[10px] uppercase tracking-widest text-brown/60 hover:text-brown border border-brown/20 rounded-full px-3 py-1 transition-colors"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => onDelete(a.id)}
+                  className="text-[10px] uppercase tracking-widest text-brown/60 hover:text-rust border border-brown/20 rounded-full px-3 py-1 transition-colors"
+                >
+                  Delete
+                </button>
               </div>
-              <div className="text-sm text-brown/80 mt-1 leading-relaxed">{a.line}</div>
-              {a.landmark && (
-                <div className="text-xs text-brown/60 italic">Near {a.landmark}</div>
-              )}
-              <div className="text-xs text-brown/70 mt-1">
-                {a.city}, {a.state} — {a.pincode}
-              </div>
-              <div className="text-xs text-brown/60 mt-2">📞 {a.phone}</div>
+
               {active && (
-                <span className="absolute top-3 right-3 h-5 w-5 rounded-full bg-rust text-cream grid place-items-center">
+                <span className="absolute top-3 right-3 h-5 w-5 rounded-full bg-rust text-cream grid place-items-center pointer-events-none">
                   <Check size={12} strokeWidth={2.4} />
                 </span>
               )}
-            </button>
+            </div>
           );
         })}
 
-        <button
-          onClick={() => {
-            if (addresses.length >= 3) {
-              toast.error("You can only save up to 3 addresses");
-              return;
-            }
-            setAdding(!adding);
-          }}
-          className="paper rounded-xl p-4 border-2 border-dashed border-brown/40 hover:border-rust hover:text-rust text-brown/70 grid place-items-center min-h-[140px] transition-colors"
-        >
-          <div className="text-center">
-            <Plus size={20} className="mx-auto mb-1" strokeWidth={1.6} />
-            <div className="text-xs uppercase tracking-widest">
-              {adding ? "Cancel" : "Add new address"}
+        {!showForm && (
+          <button
+            onClick={() => {
+              if (addresses.length >= 3) { toast.error("Maximum 3 addresses allowed"); return; }
+              setAdding(true);
+              setEditingId(null);
+              setForm(EMPTY_ADDR_FORM);
+            }}
+            className="paper rounded-xl p-4 border-2 border-dashed border-brown/40 hover:border-rust hover:text-rust text-brown/70 grid place-items-center min-h-[120px] transition-colors"
+          >
+            <div className="text-center">
+              <Plus size={20} className="mx-auto mb-1" strokeWidth={1.6} />
+              <div className="text-xs uppercase tracking-widest">Add new address</div>
             </div>
-          </div>
-        </button>
+          </button>
+        )}
       </div>
 
-      {adding && (
-        <form onSubmit={submit} className="mt-6 paper rounded-xl ink-border-thin p-5 md:p-6">
-          <h3 className="font-display text-lg text-brown mb-4">A new address</h3>
+      {showForm && (
+        <form onSubmit={editingId ? submitEdit : submitAdd} className="mt-6 paper rounded-xl ink-border-thin p-5 md:p-6">
+          <h3 className="font-display text-lg text-brown mb-4">{editingId ? "Edit address" : "A new address"}</h3>
+
+          {/* Locked delivery area */}
+          <div className="mb-4 flex items-center gap-2 text-xs text-brown/70 bg-brown/5 rounded-lg px-3 py-2">
+            <span>📍</span>
+            <span>Delivery area: <span className="font-medium text-brown">{FIXED_CITY}, {FIXED_STATE}</span></span>
+          </div>
+
           <div className="grid sm:grid-cols-2 gap-4">
             <Field label="Full name" error={errors.name}>
-              <input
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                maxLength={80}
-                className="input"
-                placeholder="Sundari Iyer"
-              />
+              <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} maxLength={80} className="input" placeholder="Sundari Iyer" />
             </Field>
             <Field label="Phone" error={errors.phone}>
-              <input
-                value={form.phone}
-                onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                maxLength={15}
-                className="input"
-                placeholder="98400 12345"
-              />
+              <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} maxLength={15} className="input" placeholder="98400 12345" />
             </Field>
             <Field label="Pincode" error={errors.pincode}>
-              <input
-                value={form.pincode}
-                onChange={(e) => setForm({ ...form, pincode: e.target.value.replace(/\D/g, "").slice(0, 6) })}
-                inputMode="numeric"
-                className="input"
-                placeholder="600028"
-              />
-            </Field>
-            <Field label="City" error={errors.city}>
-              <input
-                value={form.city}
-                onChange={(e) => setForm({ ...form, city: e.target.value })}
-                maxLength={60}
-                className="input"
-                placeholder="Chennai"
-              />
-            </Field>
-            <Field label="State" error={errors.state}>
-              <input
-                value={form.state}
-                onChange={(e) => setForm({ ...form, state: e.target.value })}
-                maxLength={60}
-                className="input"
-                placeholder="Tamil Nadu"
-              />
+              <input value={form.pincode} onChange={(e) => setForm({ ...form, pincode: e.target.value.replace(/\D/g, "").slice(0, 6) })} inputMode="numeric" className="input" placeholder="500072" />
             </Field>
             <Field label="Address type">
               <div className="flex gap-2">
                 {(["Home", "Office"] as const).map((t) => {
                   const active = form.type === t;
                   return (
-                    <button
-                      key={t}
-                      type="button"
-                      onClick={() => setForm({ ...form, type: t })}
-                      className={`h-11 px-5 rounded-full text-xs uppercase tracking-wider ink-border-thin transition-colors ${
-                        active ? "bg-brown text-cream" : "text-brown hover:bg-brown/10"
-                      }`}
-                    >
+                    <button key={t} type="button" onClick={() => setForm({ ...form, type: t })}
+                      className={`h-11 px-5 rounded-full text-xs uppercase tracking-wider ink-border-thin transition-colors ${active ? "bg-brown text-cream" : "text-brown hover:bg-brown/10"}`}>
                       {t}
                     </button>
                   );
@@ -711,28 +732,18 @@ function AddressStep({
               </div>
             </Field>
             <Field label="Address" error={errors.line} className="sm:col-span-2">
-              <textarea
-                value={form.line}
-                onChange={(e) => setForm({ ...form, line: e.target.value })}
-                maxLength={200}
-                rows={2}
-                className="input"
-                placeholder="Flat / House no, street, area"
-              />
+              <textarea value={form.line} onChange={(e) => setForm({ ...form, line: e.target.value })} maxLength={200} rows={2} className="input" placeholder="Flat / House no, street, area" />
             </Field>
             <Field label="Landmark (optional)" error={errors.landmark} className="sm:col-span-2">
-              <input
-                value={form.landmark}
-                onChange={(e) => setForm({ ...form, landmark: e.target.value })}
-                maxLength={100}
-                className="input"
-                placeholder="Behind the temple"
-              />
+              <input value={form.landmark} onChange={(e) => setForm({ ...form, landmark: e.target.value })} maxLength={100} className="input" placeholder="Near JNTU metro" />
             </Field>
           </div>
 
-          <div className="mt-5 flex justify-end">
-            <Button type="submit">Save address</Button>
+          <div className="mt-5 flex items-center justify-between gap-3">
+            <button type="button" onClick={() => { setAdding(false); cancelEdit(); }} className="text-xs uppercase tracking-widest text-brown/70 hover:text-rust">
+              Cancel
+            </button>
+            <Button type="submit">{editingId ? "Save changes" : "Save address"}</Button>
           </div>
         </form>
       )}

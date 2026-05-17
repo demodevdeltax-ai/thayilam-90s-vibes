@@ -94,7 +94,28 @@ function PhoneEmailButton({
     }
   }, []);
 
-  return <div ref={containerRef} className="flex justify-center" />;
+  return (
+    <>
+      <style>{`
+        .pe_signin_button a,
+        .pe_signin_button button,
+        .pe_signin_button > div,
+        .pe_signin_button [class*="btn"],
+        .pe_signin_button [class*="button"],
+        .pe_signin_button [class*="sign"] {
+          background-color: #B91C1C !important;
+          border-color: #B91C1C !important;
+          color: #fff !important;
+        }
+        .pe_signin_button a:hover,
+        .pe_signin_button button:hover {
+          background-color: #991B1B !important;
+          border-color: #991B1B !important;
+        }
+      `}</style>
+      <div ref={containerRef} className="flex justify-center" />
+    </>
+  );
 }
 
 // ─────────────────────────────────────────────────────────────
