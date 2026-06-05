@@ -58,7 +58,7 @@ export function Hero() {
 
             {/* Logo — shown for ~2.5s after video ends */}
             <img
-              src="/Thayilamlogoo.png"
+              src="Thayilamlogoo.png"
               alt="Thayilam"
               className={`absolute inset-0 w-full h-full object-cover rounded-full transition-opacity duration-500 ${
                 showLogo ? "opacity-100" : "opacity-0"
