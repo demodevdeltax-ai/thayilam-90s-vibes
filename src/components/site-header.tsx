@@ -52,7 +52,7 @@ export function SiteHeader() {
             <>
               <span className="hidden md:inline text-[11px] uppercase tracking-wider text-brown/65 max-w-[140px] truncate">
                 <User size={13} className="inline mr-1" />
-                {user?.fullName || user?.phone}
+                {user?.full_name || user?.phone}
               </span>
               <button
                 onClick={async () => {

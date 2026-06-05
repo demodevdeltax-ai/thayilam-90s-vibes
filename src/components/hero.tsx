@@ -27,8 +27,8 @@ export function Hero() {
           <h1 className="font-script text-rust leading-[0.85] text-[5.5rem] sm:text-[7rem] md:text-[9rem] lg:text-[11rem]"> Thayilam </h1>
 
           <p className="mt-5 max-w-lg text-brown/85 text-lg md:text-xl font-display italic leading-snug">
-            Nostalgia in every bite.<br className="hidden sm:block" />
-            90s snacks, made fresh up on order.
+            90'S Nostalgia in every bite.<br className="hidden sm:block" />
+            Freshly made agaisnt order.
           </p>
 
           <div className="mt-8 flex flex-wrap items-center gap-4">
