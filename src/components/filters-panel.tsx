@@ -172,53 +172,6 @@ export function FiltersPanel({ value, onChange, onReset }: Props) {
           )}
         </div>
       </Section>
-
-      {/* PRICE */}
-      <Section
-        title={`Price · ${rupee(value.price[0])} – ${rupee(value.price[1])}`}
-      >
-        <Slider
-          min={PRICE_BOUNDS[0]}
-          max={PRICE_BOUNDS[1]}
-          step={20}
-          value={value.price}
-          onValueChange={(v) =>
-            onChange({
-              ...value,
-              price: [v[0], v[1]] as [number, number],
-            })
-          }
-          className="mt-2 [&_[role=slider]]:bg-rust [&_[role=slider]]:border-brown [&>span:first-child]:bg-brown/20 [&_[data-orientation=horizontal]>span]:bg-rust"
-        />
-      </Section>
-
-      {/* WEIGHT */}
-      <Section title="Weight">
-        <div className="flex flex-wrap gap-2">
-          {WEIGHTS.map((w) => {
-            const active = value.weights.includes(w);
-
-            return (
-              <button
-                key={w}
-                onClick={() =>
-                  onChange({
-                    ...value,
-                    weights: toggle(value.weights, w),
-                  })
-                }
-                className={`px-3 py-1.5 rounded-full ink-border-thin text-xs uppercase tracking-wider transition-colors ${
-                  active
-                    ? "bg-brown text-cream"
-                    : "text-brown hover:bg-brown/10"
-                }`}
-              >
-                {w}
-              </button>
-            );
-          })}
-        </div>
-      </Section>
     </aside>
   );
 }

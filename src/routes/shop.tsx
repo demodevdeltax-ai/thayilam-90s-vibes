@@ -18,6 +18,14 @@ import {
 import { SORT_OPTIONS, type SortOption } from "@/lib/products";
 import { supabase } from "@/lib/supabase";
 
+const CATEGORY_ORDER: Record<string, number> = {
+  snacks: 0,
+  sweets: 1,
+  pickles: 2,
+  "spice-powders": 3,
+  combos: 4,
+};
+
 function RouteHead() {
   return (
     <Helmet>
@@ -91,7 +99,13 @@ function ShopPage() {
         break;
       case "Newest":
       default:
-        sorted.sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at));
+        sorted.sort((a, b) => {
+          const catDiff =
+            (CATEGORY_ORDER[a.category_slug] ?? 99) -
+            (CATEGORY_ORDER[b.category_slug] ?? 99);
+          if (catDiff !== 0) return catDiff;
+          return +new Date(b.created_at) - +new Date(a.created_at);
+        });
     }
     return sorted;
   }, [PRODUCTS, filters, sort]);
