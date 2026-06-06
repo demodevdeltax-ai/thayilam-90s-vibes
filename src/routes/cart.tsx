@@ -36,7 +36,6 @@ export default CartPage;
 const COUPONS: Record<string, { off: number; label: string }> = {
   PAATI10: { off: 0.1, label: "10% off — Paati's blessing" },
   FREESHIP: { off: 0, label: "Free shipping unlocked" },
-  THAYI50: { off: 50, label: "₹50 off — welcome home" },
 };
 
 type PastOrder = {
@@ -292,7 +291,7 @@ function CartPage() {
                         <input
                           value={code}
                           onChange={(e) => setCode(e.target.value)}
-                          placeholder="PAATI10"
+                          placeholder="Coupan Code"
                           className="w-full ink-border-thin rounded-full bg-cream pl-9 pr-3 h-10 text-sm text-brown placeholder:text-brown/40 focus:outline-none focus:ring-2 focus:ring-rust"
                         />
                       </div>
